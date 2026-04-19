@@ -35,7 +35,7 @@ app.use("/api/commit", commitRouter);
 app.use("/api/upload", uploadRouter);
 
 // Health check (no auth)
-app.get("/health", (_req, res) => {
+app.get("/", (_req, res) => {
   res.json({ status: "ok" });
 });
 
