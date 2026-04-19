@@ -17,6 +17,13 @@ function formatRs(n: number): string {
   return 'Rs ' + n.toLocaleString('en-PK');
 }
 
+function formatDate(dateStr: string): string {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  return `${parts[2]}-${parts[1]}-${parts[0]}`;
+}
+
 function getWeekKey(dateStr: string): string {
   const d = new Date(dateStr);
   const day = d.getDay();
@@ -171,7 +178,7 @@ export default function Dashboard() {
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={weeklyData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="week" fontSize={11} tick={{ fill: 'var(--text-secondary)' }} />
+                <XAxis dataKey="week" fontSize={11} tick={{ fill: 'var(--text-secondary)' }} tickFormatter={formatDate} />
                 <YAxis fontSize={11} tick={{ fill: 'var(--text-secondary)' }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                 <Tooltip formatter={(val: number) => formatRs(val)} />
                 <Line type="monotone" dataKey="total" stroke="var(--primary)" strokeWidth={2} dot={{ r: 3 }} />

@@ -280,10 +280,7 @@ export default function AddEntry() {
           .join(','),
       }));
 
-      const fd = new FormData();
-      fd.append('rows', JSON.stringify(rowsData));
-
-      const result = await postCommit(fd);
+      const result = await postCommit(rowsData);
       if (result.success) {
         showToast(`Saved ${result.ids.length} entries!`);
         // Clear form
@@ -441,7 +438,7 @@ export default function AddEntry() {
                     <th style={{ width: 130 }}>Date</th>
                     <th style={{ width: 160 }}>Category</th>
                     <th style={{ width: 240 }}>Description</th>
-                    <th style={{ width: 70 }}>Qty</th>
+                    <th style={{ width: 100 }}>Qty</th>
                     <th style={{ width: 70 }}>Unit</th>
                     <th style={{ width: 90 }}>Rate</th>
                     <th style={{ width: 100 }}>Total</th>

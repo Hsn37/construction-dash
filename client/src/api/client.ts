@@ -86,10 +86,11 @@ export async function postParse(
   });
 }
 
-export async function postCommit(data: FormData): Promise<{ success: boolean; ids: string[] }> {
+export async function postCommit(rows: any[]): Promise<{ success: boolean; ids: string[] }> {
   return request<{ success: boolean; ids: string[] }>('/api/commit', {
     method: 'POST',
-    body: data,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rows }),
   });
 }
 

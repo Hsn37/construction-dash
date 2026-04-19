@@ -19,7 +19,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Auth middleware for all /api routes
+// File proxy — no auth (served as img src, browser can't send headers)
+app.use("/api/files", filesRouter);
+
+// Auth middleware for all other /api routes
 app.use("/api", authMiddleware);
 
 // API routes
@@ -30,7 +33,6 @@ app.use("/api/transcribe", transcribeRouter);
 app.use("/api/parse", parseRouter);
 app.use("/api/commit", commitRouter);
 app.use("/api/upload", uploadRouter);
-app.use("/api/files", filesRouter);
 
 // Health check (no auth)
 app.get("/health", (_req, res) => {

@@ -26,7 +26,6 @@ router.get("/", async (req: Request, res: Response) => {
       return;
     }
 
-    // Prevent path traversal
     if (cloudPath.includes("..")) {
       res.status(400).json({ error: "Invalid path" });
       return;
@@ -40,10 +39,10 @@ router.get("/", async (req: Request, res: Response) => {
 
     const buffer = await readFile(cloudPath);
     const ext = path.extname(cloudPath).toLowerCase();
-    const contentType = MIME_MAP[ext] || "application/octet-stream";
+    const contentType = MIME_MAP[ext] || "image/jpeg";
 
     res.set("Content-Type", contentType);
-    res.set("Cache-Control", "public, max-age=86400"); // cache 1 day
+    res.set("Cache-Control", "public, max-age=86400");
     res.send(buffer);
   } catch (error) {
     const message =

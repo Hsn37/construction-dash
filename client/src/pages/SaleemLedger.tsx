@@ -8,6 +8,13 @@ function formatRs(n: number): string {
   return 'Rs ' + n.toLocaleString('en-PK');
 }
 
+function formatDate(dateStr: string): string {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  return `${parts[2]}-${parts[1]}-${parts[0]}`;
+}
+
 function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -139,7 +146,7 @@ export default function SaleemLedger() {
               <tbody>
                 {sortedAdvances.map((a) => (
                   <tr key={a.id}>
-                    <td>{a.date}</td>
+                    <td>{formatDate(a.date)}</td>
                     <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatRs(a.amount)}</td>
                     <td style={{ color: a.note ? 'var(--text)' : 'var(--text-secondary)' }}>
                       {a.note || '-'}

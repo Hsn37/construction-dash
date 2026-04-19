@@ -1,10 +1,17 @@
 import { useState, useEffect, useMemo, CSSProperties } from 'react';
-import { getExpenses, getCategories } from '../api/client';
+import { getExpenses, getCategories, fileUrl } from '../api/client';
 import type { Expense, Category } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 function formatRs(n: number): string {
   return 'Rs ' + n.toLocaleString('en-PK');
+}
+
+function formatDate(dateStr: string): string {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  return `${parts[2]}-${parts[1]}-${parts[0]}`;
 }
 
 type SortField = 'date' | 'category' | 'description' | 'quantity' | 'rate' | 'total';
@@ -100,6 +107,11 @@ export default function Entries() {
     return urls.split(',').map((u) => u.trim()).filter(Boolean);
   };
 
+  const imgSrc = (url: string): string => {
+    // If it's already a full URL, use as-is. Otherwise proxy through /api/files
+    return url.startsWith('http') ? url : fileUrl(url);
+  };
+
   if (loading) return <LoadingSpinner />;
   if (error) return <div className="card" style={{ color: 'var(--danger)' }}>Error: {error}</div>;
 
@@ -112,7 +124,7 @@ export default function Entries() {
         onClick={() => setExpandedId(expandedId === e.id ? null : e.id)}
         style={{ cursor: 'pointer' }}
       >
-        <td>{e.date}</td>
+        <td>{formatDate(e.date)}</td>
         <td>{e.category}</td>
         <td>{e.description}</td>
         <td style={{ textAlign: 'right' }}>{e.quantity ?? '-'}</td>
@@ -126,9 +138,9 @@ export default function Entries() {
             {parseImages(e.image_urls).length > 0 ? (
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {parseImages(e.image_urls).map((url, i) => (
-                  <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                  <a key={i} href={imgSrc(url)} target="_blank" rel="noopener noreferrer">
                     <img
-                      src={url}
+                      src={imgSrc(url)}
                       alt={`Attachment ${i + 1}`}
                       style={thumbStyle}
                     />
@@ -227,7 +239,7 @@ export default function Entries() {
                           padding: '0.5rem 1rem',
                         }}
                       >
-                        {date} ({items.length} {items.length === 1 ? 'entry' : 'entries'})
+                        {formatDate(date)} ({items.length} {items.length === 1 ? 'entry' : 'entries'})
                       </td>
                     </tr>
                     {items.map(renderRow)}

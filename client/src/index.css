@@ -1,3 +1,13 @@
+@font-face {
+  font-family: 'Jameel Noori Nastaleeq';
+  src: url('/fonts/JameelNooriNastaleeq.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFF;
+  size-adjust: 150%;
+}
+
 /* CSS Reset & Base Styles */
 *,
 *::before,
@@ -37,15 +47,9 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
-@font-face {
-  font-family: 'Nastaliq Urdu Only';
-  src: local('Noto Nastaliq Urdu');
-  unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFF;
-}
-
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, 'Nastaliq Urdu Only', sans-serif;
+  font-family: 'Jameel Noori Nastaleeq', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
   background-color: var(--bg);
   color: var(--text);
   line-height: 1.6;
@@ -251,11 +255,11 @@ label {
   }
 }
 
-/* Urdu / RTL text — uses Noto Nastaliq Urdu from Google Fonts */
+/* Urdu / RTL text — Jameel Noori Nastaleeq (must be installed on the user's system) */
 .rtl,
 .urdu {
   direction: rtl;
-  font-family: 'Noto Nastaliq Urdu', serif;
+  font-family: 'Jameel Noori Nastaleeq', 'Noto Nastaliq Urdu', serif;
   font-size: 1.2em;
   line-height: 2;
 }

@@ -1,7 +1,12 @@
-import FilenSDK from "@filen/sdk";
+import { FilenSDK } from "@filen/sdk";
 import path from "node:path";
 import os from "node:os";
+import sharp from "sharp";
 import config from "../config.js";
+
+const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".heic", ".tiff"]);
+const MAX_WIDTH = 1920;
+const QUALITY = 80;
 
 let filen: FilenSDK | null = null;
 let loginPromise: Promise<void> | null = null;
@@ -32,7 +37,6 @@ async function getClient(): Promise<FilenSDK> {
 
 /**
  * Ensure a date folder exists at /Construction/YYYY-MM-DD.
- * Creates intermediate directories as needed.
  */
 export async function ensureFolder(date: string): Promise<string> {
   const client = await getClient();
@@ -43,7 +47,7 @@ export async function ensureFolder(date: string): Promise<string> {
 
 /**
  * Upload a file buffer to a date folder in Filen.
- * Returns the cloud path (used to proxy-serve the file later).
+ * Returns the cloud path (served via proxy endpoint).
  */
 export async function uploadFile(
   buffer: Buffer,
@@ -53,14 +57,24 @@ export async function uploadFile(
   const client = await getClient();
   const folderPath = await ensureFolder(date);
 
-  // Sanitize filename and add timestamp to avoid collisions
   const sanitized = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
   const uniqueName = `${Date.now()}-${sanitized}`;
   const cloudPath = `${folderPath}/${uniqueName}`;
 
+  // Compress images before upload
+  const ext = path.extname(uniqueName).toLowerCase();
+  let finalBuffer = buffer;
+  if (IMAGE_EXTENSIONS.has(ext)) {
+    finalBuffer = await sharp(buffer)
+      .rotate() // auto-rotate based on EXIF orientation
+      .resize({ width: MAX_WIDTH, withoutEnlargement: true })
+      .jpeg({ quality: QUALITY })
+      .toBuffer();
+  }
+
   await client.fs().writeFile({
     path: cloudPath,
-    content: buffer,
+    content: finalBuffer,
   });
 
   return cloudPath;
@@ -68,7 +82,6 @@ export async function uploadFile(
 
 /**
  * Read a file from Filen by its cloud path.
- * Returns the file contents as a Buffer.
  */
 export async function readFile(cloudPath: string): Promise<Buffer> {
   const client = await getClient();
