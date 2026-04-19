@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Hard hat -->
+  <path d="M12 34h40v4a4 4 0 0 1-4 4H16a4 4 0 0 1-4-4v-4z" fill="#2563eb"/>
+  <path d="M16 34V24a16 16 0 0 1 32 0v10" fill="#3b82f6"/>
+  <rect x="30" y="12" width="4" height="14" rx="2" fill="#1d4ed8"/>
+  <!-- Bricks -->
+  <rect x="14" y="46" width="36" height="6" rx="1" fill="#f59e0b"/>
+  <line x1="24" y1="46" x2="24" y2="52" stroke="#fff" stroke-width="1.5"/>
+  <line x1="38" y1="46" x2="38" y2="52" stroke="#fff" stroke-width="1.5"/>
+  <rect x="18" y="54" width="28" height="6" rx="1" fill="#d97706"/>
+  <line x1="32" y1="54" x2="32" y2="60" stroke="#fff" stroke-width="1.5"/>
+</svg>

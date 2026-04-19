@@ -40,7 +40,7 @@ export default function Entries() {
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [groupByDate, setGroupByDate] = useState(false);
+  const [groupByDate, setGroupByDate] = useState(true);
 
   useEffect(() => {
     Promise.all([getExpenses(), getCategories()])
@@ -170,6 +170,38 @@ export default function Entries() {
     </>
   );
 
+  const renderCard = (e: Expense) => (
+    <div
+      key={e.id}
+      className="card"
+      style={{ marginBottom: '0.5rem', padding: '0.75rem 1rem', cursor: 'pointer' }}
+      onClick={() => setExpandedId(expandedId === e.id ? null : e.id)}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{formatDate(e.date)}</span>
+        <span style={{ fontWeight: 700, fontSize: '1rem' }}>{formatRs(e.total)}</span>
+      </div>
+      <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.25rem' }}>{e.description}</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span className="badge">{e.category}</span>
+        {(e.quantity != null && e.quantity > 0) && (
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+            {e.quantity} {e.unit || ''} {e.rate != null ? `@ ${formatRs(e.rate)}` : ''}
+          </span>
+        )}
+      </div>
+      {expandedId === e.id && parseImages(e.image_urls).length > 0 && (
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border)' }}>
+          {parseImages(e.image_urls).map((url, i) => (
+            <a key={i} href={imgSrc(url)} target="_blank" rel="noopener noreferrer" onClick={(ev) => ev.stopPropagation()}>
+              <img src={imgSrc(url)} alt={`Attachment ${i + 1}`} style={thumbStyle} />
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -185,11 +217,11 @@ export default function Entries() {
       <div className="filter-bar">
         <div>
           <label>From</label>
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} data-placeholder="Select date" />
         </div>
         <div>
           <label>To</label>
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} data-placeholder="Select date" />
         </div>
         <div>
           <label>Category</label>
@@ -211,7 +243,8 @@ export default function Entries() {
         </div>
       </div>
 
-      <div className="table-wrap">
+      {/* Desktop table */}
+      <div className="table-wrap desktop-only">
         <table>
           <thead>
             <tr>
@@ -267,6 +300,36 @@ export default function Entries() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile card view */}
+      <div className="mobile-only">
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', overflowX: 'auto' }}>
+          {(['date', 'total', 'category'] as SortField[]).map((f) => (
+            <button
+              key={f}
+              className={`btn btn-sm ${sortField === f ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => handleSort(f)}
+            >
+              {f.charAt(0).toUpperCase() + f.slice(1)}{sortField === f ? (sortDir === 'asc' ? ' \u2191' : ' \u2193') : ''}
+            </button>
+          ))}
+        </div>
+        {grouped
+          ? grouped.map(([date, items]) => (
+              <div key={'mgroup-' + date}>
+                <div style={{ background: 'var(--primary-light)', color: 'var(--primary)', fontWeight: 700, fontSize: '0.8125rem', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)', marginBottom: '0.5rem' }}>
+                  {formatDate(date)} ({items.length} {items.length === 1 ? 'entry' : 'entries'})
+                </div>
+                {items.map(renderCard)}
+              </div>
+            ))
+          : sorted.map(renderCard)}
+        {sorted.length === 0 && (
+          <div className="card" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>
+            No entries found.
+          </div>
+        )}
       </div>
 
       <div style={{ marginTop: '0.75rem', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>

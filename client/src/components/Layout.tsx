@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { CSSProperties } from 'react';
+import { CSSProperties, useState } from 'react';
 
 const navLinks = [
   { to: '/', label: 'Dashboard' },
@@ -11,6 +11,8 @@ const navLinks = [
 ];
 
 export default function Layout() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <>
       <style>{`
@@ -18,16 +20,38 @@ export default function Layout() {
           from { transform: translateX(100%); opacity: 0; }
           to { transform: translateX(0); opacity: 1; }
         }
+        @media (min-width: 769px) {
+          .nav-links { display: flex !important; position: static !important; background: none !important; border: none !important; box-shadow: none !important; padding: 0 !important; flex-direction: row !important; }
+          .nav-hamburger { display: none !important; }
+        }
       `}</style>
       <nav style={navStyle}>
         <div style={navInnerStyle}>
-          <span style={logoStyle}>Construction Tracker</span>
-          <div style={linksStyle}>
+          <span style={logoStyle}>
+            <img src="/logo.svg" alt="" style={{ width: 28, height: 28, verticalAlign: 'middle', marginRight: '0.5rem' }} />
+            Construction Tracker
+          </span>
+          <button
+            className="nav-hamburger"
+            onClick={() => setMenuOpen(!menuOpen)}
+            style={hamburgerStyle}
+            aria-label="Menu"
+          >
+            {menuOpen ? '\u2715' : '\u2630'}
+          </button>
+          <div
+            className="nav-links"
+            style={{
+              ...linksStyle,
+              ...(menuOpen ? mobileLinksOpen : mobileLinksHidden),
+            }}
+          >
             {navLinks.map((link) => (
               <NavLink
                 key={link.to}
                 to={link.to}
                 end={link.to === '/'}
+                onClick={() => setMenuOpen(false)}
                 style={({ isActive }) => ({
                   ...linkStyle,
                   ...(isActive ? activeLinkStyle : {}),
@@ -63,9 +87,9 @@ const navInnerStyle: CSSProperties = {
   padding: '0 1rem',
   display: 'flex',
   alignItems: 'center',
-  gap: '2rem',
-  height: 56,
-  overflowX: 'auto',
+  justifyContent: 'space-between',
+  flexWrap: 'wrap',
+  minHeight: 56,
 };
 
 const logoStyle: CSSProperties = {
@@ -76,10 +100,30 @@ const logoStyle: CSSProperties = {
   flexShrink: 0,
 };
 
+const hamburgerStyle: CSSProperties = {
+  background: 'none',
+  border: 'none',
+  fontSize: '1.5rem',
+  cursor: 'pointer',
+  color: 'var(--text)',
+  padding: '0.25rem',
+};
+
 const linksStyle: CSSProperties = {
-  display: 'flex',
   gap: '0.25rem',
   alignItems: 'center',
+};
+
+const mobileLinksHidden: CSSProperties = {
+  display: 'none',
+};
+
+const mobileLinksOpen: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  width: '100%',
+  padding: '0.5rem 0',
+  gap: '0.25rem',
 };
 
 const linkStyle: CSSProperties = {

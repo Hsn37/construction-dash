@@ -106,11 +106,11 @@ export default function Dashboard() {
       <div className="filter-bar">
         <div>
           <label>From</label>
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} data-placeholder="Select date" />
         </div>
         <div>
           <label>To</label>
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} data-placeholder="Select date" />
         </div>
         {(dateFrom || dateTo) && (
           <button className="btn btn-secondary btn-sm" onClick={() => { setDateFrom(''); setDateTo(''); }}>
@@ -120,7 +120,7 @@ export default function Dashboard() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-4" style={{ marginBottom: '1.5rem' }}>
+      <div className="grid grid-4 summary-cards">
         <div className="card">
           <div className="card-header">Total Spent</div>
           <div className="card-value">{formatRs(totalSpent)}</div>
@@ -142,7 +142,7 @@ export default function Dashboard() {
       </div>
 
       {/* Charts row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div className="charts-grid">
         <div className="card">
           <div className="card-header" style={{ marginBottom: '1rem' }}>Spend by Category</div>
           {pieData.length > 0 ? (
@@ -155,7 +155,7 @@ export default function Dashboard() {
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={false}
                   labelLine={false}
                   fontSize={11}
                 >

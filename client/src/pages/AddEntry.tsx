@@ -456,7 +456,7 @@ export default function AddEntry() {
             </button>
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <div className="preview-layout">
             {/* Table area */}
             <div style={{ flex: 1, overflowX: 'auto' }}>
               <table style={{ fontSize: '0.875rem', tableLayout: 'fixed', minWidth: 900 }}>

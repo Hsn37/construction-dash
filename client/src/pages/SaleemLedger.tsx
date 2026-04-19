@@ -76,7 +76,7 @@ export default function SaleemLedger() {
 
   return (
     <div>
-      <h1 className="page-title">Saleem Ledger</h1>
+      <h1 className="page-title">Saleem Sahab Ledger</h1>
 
       {/* Summary */}
       <div className="grid grid-3" style={{ marginBottom: '1.5rem' }}>
