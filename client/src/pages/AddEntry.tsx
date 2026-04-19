@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, CSSProperties } from 'react';
-import { getCategories, postTranscribe, postParse, postCommit, postUploadImage } from '../api/client';
+import { getCategories, postCategories, postTranscribe, postParse, postCommit, postUploadImage } from '../api/client';
 import type { Category } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useToast } from '../components/Toast';
@@ -165,7 +165,15 @@ export default function AddEntry() {
         assignedImages: [],
       }));
       setRows(parsed);
-      showToast(`Parsed ${parsed.length} row(s)`);
+
+      // Detect new categories suggested by LLM
+      const existingLabels = new Set(categories.filter(c => c.active === 1).map(c => c.label));
+      const newCats = new Set(parsed.map(r => r.category).filter(c => c && !existingLabels.has(c)));
+      if (newCats.size > 0) {
+        showToast(`Parsed ${parsed.length} row(s) — ${newCats.size} new categor${newCats.size === 1 ? 'y' : 'ies'} suggested`);
+      } else {
+        showToast(`Parsed ${parsed.length} row(s)`);
+      }
     } catch (err: any) {
       showToast('Parse failed: ' + err.message, 'error');
     } finally {
@@ -173,11 +181,22 @@ export default function AddEntry() {
     }
   };
 
-  // Row editing
+  // Row editing — auto-calculate total when qty or rate changes
   const updateRow = useCallback(
     (id: string, field: keyof ParsedRow, value: string) => {
       setRows((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, [field]: value } : r))
+        prev.map((r) => {
+          if (r.id !== id) return r;
+          const updated = { ...r, [field]: value };
+          if (field === 'quantity' || field === 'rate') {
+            const qty = parseFloat(updated.quantity);
+            const rate = parseFloat(updated.rate);
+            if (!isNaN(qty) && !isNaN(rate)) {
+              updated.total = String(qty * rate);
+            }
+          }
+          return updated;
+        })
       );
     },
     []
@@ -225,7 +244,15 @@ export default function AddEntry() {
     if (rows.length === 0) return;
     setSaving(true);
     try {
-      // First upload all unique images that are assigned
+      // Auto-create any new categories that don't exist yet
+      const existingLabels = new Set(categories.filter(c => c.active === 1).map(c => c.label));
+      const newCatLabels = [...new Set(rows.map(r => r.category).filter(c => c && !existingLabels.has(c)))];
+      for (const label of newCatLabels) {
+        const updated = await postCategories({ action: 'add', label });
+        setCategories(updated);
+      }
+
+      // Upload all unique images that are assigned
       const assignedIndices = new Set<number>();
       rows.forEach((r) => r.assignedImages.forEach((i) => assignedIndices.add(i)));
 
@@ -408,17 +435,17 @@ export default function AddEntry() {
           <div style={{ display: 'flex', gap: '1rem' }}>
             {/* Table area */}
             <div style={{ flex: 1, overflowX: 'auto' }}>
-              <table style={{ fontSize: '0.8125rem' }}>
+              <table style={{ fontSize: '0.875rem', tableLayout: 'fixed', minWidth: 900 }}>
                 <thead>
                   <tr>
-                    <th style={{ minWidth: 110 }}>Date</th>
-                    <th style={{ minWidth: 130 }}>Category</th>
-                    <th style={{ minWidth: 180 }}>Description</th>
-                    <th style={{ minWidth: 60 }}>Qty</th>
-                    <th style={{ minWidth: 60 }}>Unit</th>
-                    <th style={{ minWidth: 80 }}>Rate</th>
-                    <th style={{ minWidth: 90 }}>Total</th>
-                    <th style={{ minWidth: 50 }}>Imgs</th>
+                    <th style={{ width: 130 }}>Date</th>
+                    <th style={{ width: 160 }}>Category</th>
+                    <th style={{ width: 240 }}>Description</th>
+                    <th style={{ width: 70 }}>Qty</th>
+                    <th style={{ width: 70 }}>Unit</th>
+                    <th style={{ width: 90 }}>Rate</th>
+                    <th style={{ width: 100 }}>Total</th>
+                    <th style={{ width: 50 }}>Imgs</th>
                     <th style={{ width: 40 }}></th>
                   </tr>
                 </thead>
@@ -443,17 +470,26 @@ export default function AddEntry() {
                         />
                       </td>
                       <td style={cellPad}>
-                        <select
-                          value={row.category}
-                          onChange={(e) => updateRow(row.id, 'category', e.target.value)}
-                          style={cellInputStyle}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <option value="">Select...</option>
-                          {activeCategories.map((c) => (
-                            <option key={c.id} value={c.label}>{c.label}</option>
-                          ))}
-                        </select>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <CategorySelect
+                            value={row.category}
+                            categories={activeCategories}
+                            onChange={(val) => updateRow(row.id, 'category', val)}
+                            onAddNew={async (label) => {
+                              try {
+                                const updated = await postCategories({ action: 'add', label });
+                                setCategories(updated);
+                                updateRow(row.id, 'category', label);
+                                showToast(`Category "${label}" added`);
+                              } catch (err: any) {
+                                showToast(err.message, 'error');
+                              }
+                            }}
+                          />
+                          {row.category && !activeCategories.some(c => c.label === row.category) && (
+                            <span style={newBadge}>new</span>
+                          )}
+                        </div>
                       </td>
                       <td style={cellPad}>
                         <input
@@ -575,6 +611,90 @@ export default function AddEntry() {
   );
 }
 
+function CategorySelect({
+  value,
+  categories,
+  onChange,
+  onAddNew,
+}: {
+  value: string;
+  categories: Category[];
+  onChange: (val: string) => void;
+  onAddNew: (label: string) => Promise<void>;
+}) {
+  const [adding, setAdding] = useState(false);
+  const [newLabel, setNewLabel] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (adding) inputRef.current?.focus();
+  }, [adding]);
+
+  if (adding) {
+    return (
+      <div style={{ display: 'flex', gap: '0.25rem' }} onClick={(e) => e.stopPropagation()}>
+        <input
+          ref={inputRef}
+          type="text"
+          value={newLabel}
+          onChange={(e) => setNewLabel(e.target.value)}
+          placeholder='e.g. بجری (gravel)'
+          style={{ ...cellInputStyle, flex: 1 }}
+          onKeyDown={async (e) => {
+            if (e.key === 'Enter' && newLabel.trim()) {
+              await onAddNew(newLabel.trim());
+              setNewLabel('');
+              setAdding(false);
+            }
+            if (e.key === 'Escape') {
+              setAdding(false);
+              setNewLabel('');
+            }
+          }}
+        />
+        <button
+          className="btn btn-primary btn-sm"
+          style={{ padding: '0.15rem 0.4rem', fontSize: '0.75rem' }}
+          onClick={async () => {
+            if (newLabel.trim()) {
+              await onAddNew(newLabel.trim());
+              setNewLabel('');
+              setAdding(false);
+            }
+          }}
+        >
+          OK
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <select
+      value={value}
+      onChange={(e) => {
+        if (e.target.value === '__add_new__') {
+          setAdding(true);
+        } else {
+          onChange(e.target.value);
+        }
+      }}
+      style={cellInputStyle}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <option value="">Select...</option>
+      {/* Show LLM-suggested value if not in the existing list */}
+      {value && !categories.some(c => c.label === value) && (
+        <option value={value}>{value}</option>
+      )}
+      {categories.map((c) => (
+        <option key={c.id} value={c.label}>{c.label}</option>
+      ))}
+      <option value="__add_new__">+ Add new...</option>
+    </select>
+  );
+}
+
 function LoadingSpinnerInline() {
   return (
     <span
@@ -603,6 +723,17 @@ const dropZoneStyle: CSSProperties = {
   padding: '1rem',
   textAlign: 'center',
   cursor: 'pointer',
+};
+
+const newBadge: CSSProperties = {
+  fontSize: '0.625rem',
+  fontWeight: 600,
+  padding: '0.1rem 0.35rem',
+  borderRadius: '9999px',
+  background: 'var(--warning-light)',
+  color: '#92400e',
+  whiteSpace: 'nowrap',
+  flexShrink: 0,
 };
 
 const previewThumbStyle: CSSProperties = {
@@ -654,11 +785,12 @@ const cellPad: CSSProperties = {
 };
 
 const cellInputStyle: CSSProperties = {
-  padding: '0.25rem 0.375rem',
-  fontSize: '0.8125rem',
+  padding: '0.375rem 0.5rem',
+  fontSize: '0.875rem',
   border: '1px solid var(--border)',
   borderRadius: 'var(--radius-sm)',
   width: '100%',
+  lineHeight: '1.8',
 };
 
 const imagePanelStyle: CSSProperties = {

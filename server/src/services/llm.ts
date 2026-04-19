@@ -1,62 +1,62 @@
 import OpenAI from "openai";
+import { zodResponseFormat } from "openai/helpers/zod";
+import { z } from "zod";
 import config from "../config.js";
 
 const openai = new OpenAI({ apiKey: config.OPENAI_API_KEY });
 
-interface ExpenseRow {
-  date: string | null;
-  category: string;
-  description: string;
-  quantity: number | null;
-  unit: string | null;
-  rate: number | null;
-  total: number;
-}
+const ExpenseRowSchema = z.object({
+  date: z.string().describe("DD-MM-YYYY"),
+  category: z.string().describe("Category label, e.g. بجری (gravel)"),
+  description: z.string(),
+  quantity: z.number().nullable(),
+  unit: z.string().nullable(),
+  rate: z.number().nullable(),
+  total: z.number(),
+});
+
+const ExpenseResponseSchema = z.object({
+  rows: z.array(ExpenseRowSchema),
+});
+
+export type ExpenseRow = z.infer<typeof ExpenseRowSchema>;
 
 /**
- * Send messy construction expense text to GPT-4o and get back
- * structured expense rows.
+ * Send messy construction expense text to GPT-4o-mini and get back
+ * structured expense rows using OpenAI structured outputs.
  */
 export async function parseExpenses(
   text: string,
   categories: string[],
 ): Promise<ExpenseRow[]> {
-  const systemPrompt =
-    "You are a construction expense parser. Given messy notes about construction purchases, " +
-    "extract a JSON array of expense rows. Each row: {date, category, description, quantity, unit, rate, total}. " +
-    `Use ONLY these categories: [${categories.join(", ")}]. ` +
-    "If date unclear, null. If rate/quantity unclear, just fill total. Return ONLY valid JSON, no markdown.";
+  const systemPrompt = `
+# Task
+You are a construction expense parser. Given messy notes about construction purchases, extract expense rows.
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o",
+# Instructions
+- Use ONLY these categories: [${categories.join(", ")}].
+- You can also suggest a new category if not already in the list.
+  - Try to keep it urdu first. Categories should be <urdu> (<english>)
+  - For example: بجری (gravel), اینٹ (bricks), سیمنٹ (cement)
+- If date is unclear, use ${new Date().toISOString().split("T")[0]}.
+- If rate/quantity unclear, just fill total.
+`;
+
+  const response = await openai.beta.chat.completions.parse({
+    model: "gpt-4o-mini",
     temperature: 0.1,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: text },
     ],
+    response_format: zodResponseFormat(ExpenseResponseSchema, "expenses"),
   });
 
-  const content = response.choices?.[0]?.message?.content;
+  const parsed = response.choices[0].message.parsed;
 
-  if (!content) {
-    throw new Error("No content in LLM response");
+  if (!parsed) {
+    throw new Error("Failed to parse structured response from LLM");
   }
 
-  // Strip potential markdown code fences
-  const cleaned = content
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-
-  const parsed: ExpenseRow[] = JSON.parse(cleaned);
-
-  return parsed.map((row) => ({
-    date: row.date ?? null,
-    category: String(row.category),
-    description: String(row.description),
-    quantity: row.quantity ?? null,
-    unit: row.unit ?? null,
-    rate: row.rate ?? null,
-    total: Number(row.total),
-  }));
+  return parsed.rows;
 }

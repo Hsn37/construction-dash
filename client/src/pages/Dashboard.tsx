@@ -119,7 +119,7 @@ export default function Dashboard() {
           <div className="card-value">{formatRs(totalSpent)}</div>
         </div>
         <div className="card">
-          <div className="card-header">Saleem Balance</div>
+          <div className="card-header">Saleem Sahab Balance</div>
           <div className="card-value" style={{ color: balance >= 0 ? 'var(--success)' : 'var(--danger)' }}>
             {formatRs(balance)}
           </div>

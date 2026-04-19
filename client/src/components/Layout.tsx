@@ -4,7 +4,7 @@ import { CSSProperties } from 'react';
 const navLinks = [
   { to: '/', label: 'Dashboard' },
   { to: '/entries', label: 'Entries' },
-  { to: '/saleem', label: 'Saleem Ledger' },
+  { to: '/saleem', label: 'Saleem Sahab Ledger' },
   { to: '/add', label: 'Add Entry' },
   { to: '/categories', label: 'Categories' },
   { to: '/upload', label: 'Upload' },

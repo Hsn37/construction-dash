@@ -39,6 +39,7 @@ export async function transcribe(
   const response = await openai.audio.transcriptions.create({
     model: "whisper-1",
     file,
+    language: "ur",
   });
 
   return response.text;
