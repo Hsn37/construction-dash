@@ -36,10 +36,10 @@ export async function transcribe(
     { type: mimetype },
   );
 
-  const response = await openai.audio.transcriptions.create({
+  const response = await openai.audio.translations.create({
     model: "whisper-1",
     file,
-    language: "ur",
+    prompt: "Construction expenses: cement, bajri, steel, labour, plumber, electrician, paint, tiles, sand, reti, saria, mistri.",
   });
 
   return response.text;

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, CSSProperties } from 'react';
+import heic2any from 'heic2any';
 import { getCategories, postCategories, postTranscribe, postParse, postCommit, postUploadImage } from '../api/client';
 import type { Category } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -23,6 +24,17 @@ interface UploadedFile {
 
 function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+/** Normalize a date string to YYYY-MM-DD (handles DD-MM-YYYY from LLM) */
+function toISO(dateStr: string): string {
+  if (!dateStr) return todayStr();
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  // If first part is 4 digits, already YYYY-MM-DD
+  if (parts[0].length === 4) return dateStr;
+  // Otherwise assume DD-MM-YYYY
+  return `${parts[2]}-${parts[1]}-${parts[0]}`;
 }
 
 export default function AddEntry() {
@@ -62,12 +74,14 @@ export default function AddEntry() {
       .finally(() => setLoadingCats(false));
   }, []);
 
-  // Cleanup previews
+  // Cleanup previews on unmount only
+  const uploadedFilesRef = useRef(uploadedFiles);
+  uploadedFilesRef.current = uploadedFiles;
   useEffect(() => {
     return () => {
-      uploadedFiles.forEach((f) => URL.revokeObjectURL(f.preview));
+      uploadedFilesRef.current.forEach((f) => URL.revokeObjectURL(f.preview));
     };
-  }, [uploadedFiles]);
+  }, []);
 
   // Recording
   const startRecording = async () => {
@@ -119,13 +133,26 @@ export default function AddEntry() {
     return `${m}:${String(sec).padStart(2, '0')}`;
   };
 
-  // File handling
-  const addFiles = (files: FileList | null) => {
+  // File handling — convert HEIC to JPEG for preview (browsers can't display HEIC)
+  const addFiles = async (files: FileList | null) => {
     if (!files) return;
-    const newFiles: UploadedFile[] = Array.from(files).map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }));
+    const newFiles: UploadedFile[] = [];
+    for (const file of Array.from(files)) {
+      const isHeic = file.type === 'image/heic' || file.type === 'image/heif'
+        || /\.heic$/i.test(file.name) || /\.heif$/i.test(file.name);
+      if (isHeic) {
+        try {
+          const blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.8 }) as Blob;
+          const jpegFile = new File([blob], file.name.replace(/\.heic$/i, '.jpg'), { type: 'image/jpeg' });
+          newFiles.push({ file: jpegFile, preview: URL.createObjectURL(blob) });
+        } catch {
+          // Fallback: use original file
+          newFiles.push({ file, preview: URL.createObjectURL(file) });
+        }
+      } else {
+        newFiles.push({ file, preview: URL.createObjectURL(file) });
+      }
+    }
     setUploadedFiles((prev) => [...prev, ...newFiles]);
   };
 
@@ -155,7 +182,7 @@ export default function AddEntry() {
       const res = await postParse(text.trim(), catLabels);
       const parsed: ParsedRow[] = (res.rows || []).map((r: any) => ({
         id: crypto.randomUUID(),
-        date: r.date || todayStr(),
+        date: toISO(r.date) || todayStr(),
         category: r.category || '',
         description: r.description || '',
         quantity: r.quantity != null ? String(r.quantity) : '',
@@ -438,11 +465,11 @@ export default function AddEntry() {
                     <th style={{ width: 130 }}>Date</th>
                     <th style={{ width: 160 }}>Category</th>
                     <th style={{ width: 240 }}>Description</th>
-                    <th style={{ width: 100 }}>Qty</th>
-                    <th style={{ width: 70 }}>Unit</th>
-                    <th style={{ width: 90 }}>Rate</th>
+                    <th style={{ width: 80 }}>Qty</th>
+                    <th style={{ width: 80 }}>Unit</th>
+                    <th style={{ width: 80 }}>Rate</th>
                     <th style={{ width: 100 }}>Total</th>
-                    <th style={{ width: 50 }}>Imgs</th>
+                    <th style={{ width: 100 }}>Imgs</th>
                     <th style={{ width: 40 }}></th>
                   </tr>
                 </thead>
@@ -502,7 +529,7 @@ export default function AddEntry() {
                           type="number"
                           value={row.quantity}
                           onChange={(e) => updateRow(row.id, 'quantity', e.target.value)}
-                          style={{ ...cellInputStyle, width: 60 }}
+                          style={{ ...cellInputStyle, width: '100%' }}
                           onClick={(e) => e.stopPropagation()}
                         />
                       </td>
@@ -511,7 +538,7 @@ export default function AddEntry() {
                           type="text"
                           value={row.unit}
                           onChange={(e) => updateRow(row.id, 'unit', e.target.value)}
-                          style={{ ...cellInputStyle, width: 60 }}
+                          style={{ ...cellInputStyle, width: '100%' }}
                           onClick={(e) => e.stopPropagation()}
                         />
                       </td>
@@ -520,7 +547,7 @@ export default function AddEntry() {
                           type="number"
                           value={row.rate}
                           onChange={(e) => updateRow(row.id, 'rate', e.target.value)}
-                          style={{ ...cellInputStyle, width: 80 }}
+                          style={{ ...cellInputStyle, width: '100%' }}
                           onClick={(e) => e.stopPropagation()}
                         />
                       </td>
@@ -529,15 +556,29 @@ export default function AddEntry() {
                           type="number"
                           value={row.total}
                           onChange={(e) => updateRow(row.id, 'total', e.target.value)}
-                          style={{ ...cellInputStyle, width: 90 }}
+                          style={{ ...cellInputStyle, width: '100%' }}
                           onClick={(e) => e.stopPropagation()}
                         />
                       </td>
-                      <td style={{ ...cellPad, textAlign: 'center' }}>
+                      <td style={{ ...cellPad }}>
                         {row.assignedImages.length > 0 ? (
-                          <span className="badge">{row.assignedImages.length}</span>
+                          <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                            {row.assignedImages.map((imgIdx) => {
+                              const uf = uploadedFiles[imgIdx];
+                              if (!uf) return null;
+                              return (
+                                <img
+                                  key={imgIdx}
+                                  src={uf.preview}
+                                  alt={uf.file.name}
+                                  title={uf.file.name}
+                                  style={assignedThumbStyle}
+                                />
+                              );
+                            })}
+                          </div>
                         ) : (
-                          <span style={{ color: 'var(--text-secondary)' }}>-</span>
+                          <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>-</span>
                         )}
                       </td>
                       <td style={cellPad}>
@@ -817,4 +858,12 @@ const imagePanelThumb: CSSProperties = {
   height: 80,
   objectFit: 'cover',
   borderRadius: 'var(--radius-sm)',
+};
+
+const assignedThumbStyle: CSSProperties = {
+  width: 36,
+  height: 36,
+  objectFit: 'cover',
+  borderRadius: 'var(--radius-sm)',
+  border: '1px solid var(--border)',
 };

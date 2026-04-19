@@ -7,9 +7,19 @@ function formatRs(n: number): string {
   return 'Rs ' + n.toLocaleString('en-PK');
 }
 
-function formatDate(dateStr: string): string {
+/** Normalize any date string to YYYY-MM-DD for sorting/comparison */
+function toISO(dateStr: string): string {
   if (!dateStr) return '';
   const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  if (parts[0].length === 4) return dateStr; // already YYYY-MM-DD
+  return `${parts[2]}-${parts[1]}-${parts[0]}`; // DD-MM-YYYY → YYYY-MM-DD
+}
+
+function formatDate(dateStr: string): string {
+  if (!dateStr) return '';
+  const iso = toISO(dateStr);
+  const parts = iso.split('-');
   if (parts.length !== 3) return dateStr;
   return `${parts[2]}-${parts[1]}-${parts[0]}`;
 }
@@ -41,8 +51,9 @@ export default function Entries() {
 
   const filtered = useMemo(() => {
     return expenses.filter((e) => {
-      if (dateFrom && e.date < dateFrom) return false;
-      if (dateTo && e.date > dateTo) return false;
+      const d = toISO(e.date);
+      if (dateFrom && d < dateFrom) return false;
+      if (dateTo && d > dateTo) return false;
       if (catFilter && e.category !== catFilter) return false;
       if (search) {
         const s = search.toLowerCase();
@@ -61,7 +72,7 @@ export default function Entries() {
     arr.sort((a, b) => {
       let aVal: any, bVal: any;
       switch (sortField) {
-        case 'date': aVal = a.date; bVal = b.date; break;
+        case 'date': aVal = toISO(a.date); bVal = toISO(b.date); break;
         case 'category': aVal = a.category; bVal = b.category; break;
         case 'description': aVal = a.description; bVal = b.description; break;
         case 'quantity': aVal = a.quantity ?? 0; bVal = b.quantity ?? 0; break;
@@ -79,9 +90,10 @@ export default function Entries() {
     if (!groupByDate) return null;
     const map = new Map<string, Expense[]>();
     for (const e of sorted) {
-      const list = map.get(e.date) || [];
+      const key = toISO(e.date);
+      const list = map.get(key) || [];
       list.push(e);
-      map.set(e.date, list);
+      map.set(key, list);
     }
     return Array.from(map.entries()).sort((a, b) =>
       sortDir === 'desc' ? b[0].localeCompare(a[0]) : a[0].localeCompare(b[0])

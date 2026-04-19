@@ -34,16 +34,20 @@ export async function parseExpenses(
 You are a construction expense parser. Given messy notes about construction purchases, extract expense rows.
 
 # Instructions
-- Use ONLY these categories: [${categories.join(", ")}].
-- You can also suggest a new category if not already in the list.
+- Map entries to these categories: [${categories.join(", ")}].
+- Suggest a new category if not already in the list.
   - Try to keep it urdu first. Categories should be <urdu> (<english>)
   - For example: بجری (gravel), اینٹ (bricks), سیمنٹ (cement)
-- If date is unclear, use ${new Date().toISOString().split("T")[0]}.
+- Output dates in DD-MM-YYYY format.
+- If date is unclear, use today's date: ${new Date().toLocaleDateString("en-GB").split("/").join("-")}.
 - If rate/quantity unclear, just fill total.
+  - You can set quantity to 1 and rate to the price. so it adds up to the total.
+  - If you have some values, you can infer the rest. 
+  - For example: if you have total and quantity, you can infer the rate.
 `;
 
   const response = await openai.beta.chat.completions.parse({
-    model: "gpt-4o-mini",
+    model: "gpt-4.1-mini",
     temperature: 0.1,
     messages: [
       { role: "system", content: systemPrompt },
