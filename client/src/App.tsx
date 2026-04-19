@@ -9,14 +9,40 @@ import AddEntry from './pages/AddEntry';
 import Categories from './pages/Categories';
 import ImageUpload from './pages/ImageUpload';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
+async function validateToken(token: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/categories`, {
+      headers: { 'X-Auth-Token': token },
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 function AuthModal({ onAuth }: { onAuth: () => void }) {
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.trim()) {
-      localStorage.setItem('auth_token', password.trim());
+    const trimmed = password.trim();
+    if (!trimmed) return;
+
+    setError('');
+    setLoading(true);
+
+    const valid = await validateToken(trimmed);
+
+    if (valid) {
+      localStorage.setItem('auth_token', trimmed);
       onAuth();
+    } else {
+      setError('Invalid token. Please try again.');
+      setLoading(false);
     }
   };
 
@@ -36,8 +62,18 @@ function AuthModal({ onAuth }: { onAuth: () => void }) {
             autoFocus
             style={{ marginBottom: '1rem' }}
           />
-          <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
-            Continue
+          {error && (
+            <p style={{ color: 'var(--danger, #e53e3e)', fontSize: '0.875rem', marginBottom: '1rem', marginTop: '-0.5rem' }}>
+              {error}
+            </p>
+          )}
+          <button
+            type="submit"
+            className="btn btn-primary btn-lg"
+            style={{ width: '100%' }}
+            disabled={loading}
+          >
+            {loading ? 'Validating...' : 'Continue'}
           </button>
         </form>
       </div>
@@ -47,11 +83,25 @@ function AuthModal({ onAuth }: { onAuth: () => void }) {
 
 export default function App() {
   const [hasAuth, setHasAuth] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
-    if (token) setHasAuth(true);
+    if (!token) {
+      setChecking(false);
+      return;
+    }
+    validateToken(token).then((valid) => {
+      if (valid) {
+        setHasAuth(true);
+      } else {
+        localStorage.removeItem('auth_token');
+      }
+      setChecking(false);
+    });
   }, []);
+
+  if (checking) return null;
 
   if (!hasAuth) {
     return <AuthModal onAuth={() => setHasAuth(true)} />;

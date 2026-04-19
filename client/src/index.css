@@ -45,6 +45,7 @@ html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 body {
@@ -422,6 +423,8 @@ input[type='date'] {
   background-repeat: no-repeat;
   background-position: 0.5rem center;
   background-size: 16px;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* iOS date input fix — show placeholder when empty */
@@ -465,15 +468,32 @@ input[type='date'][data-placeholder]:not([value=''])::before {
     gap: 0.5rem;
     display: grid;
     grid-template-columns: 1fr 1fr;
+    overflow: hidden;
   }
 
   .filter-bar > div {
     width: 100%;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .filter-bar > div:only-child,
   .filter-bar > div:nth-last-child(1):nth-child(odd) {
     grid-column: 1 / -1;
+  }
+
+  input, select, textarea {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  input[type='date'] {
+    padding-left: 0.5rem;
+    background-image: none;
+    -webkit-appearance: none;
+    appearance: none;
+    font-size: 0.8125rem;
   }
 
   th, td {
