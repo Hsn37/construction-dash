@@ -151,7 +151,7 @@ export default function AddEntry() {
     if (!text.trim()) return;
     setProcessing(true);
     try {
-      const catLabels = categories.filter((c) => c.active === 'TRUE').map((c) => c.label);
+      const catLabels = categories.filter((c) => c.active === 1).map((c) => c.label);
       const res = await postParse(text.trim(), catLabels);
       const parsed: ParsedRow[] = (res.rows || []).map((r: any) => ({
         id: crypto.randomUUID(),
@@ -275,7 +275,7 @@ export default function AddEntry() {
     }
   };
 
-  const activeCategories = categories.filter((c) => c.active === 'TRUE');
+  const activeCategories = categories.filter((c) => c.active === 1);
 
   if (loadingCats) return <LoadingSpinner />;
 

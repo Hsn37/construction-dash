@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
-import { appendRow } from "../services/sheets.js";
+import { addExpense } from "../services/db.js";
 import { uploadFile } from "../services/filen.js";
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -42,14 +42,17 @@ router.post(
 
       const files = (req.files as Express.Multer.File[]) || [];
 
-      // Upload all image files and collect their URLs
-      const imageUrls: string[] = [];
+      // Upload all image files and collect their cloud paths
+      const imagePaths: string[] = [];
       for (const file of files) {
-        // Use today's date if no specific date — or derive from the first row
         const date =
           rows[0]?.date || new Date().toISOString().slice(0, 10);
-        const url = await uploadFile(file.buffer, file.originalname, date);
-        imageUrls.push(url);
+        const cloudPath = await uploadFile(
+          file.buffer,
+          file.originalname,
+          date,
+        );
+        imagePaths.push(cloudPath);
       }
 
       const ids: string[] = [];
@@ -59,22 +62,21 @@ router.post(
         const id = uuidv4();
         ids.push(id);
 
-        // Determine which images are assigned to this row
         const assignedImageIndices = assignments?.[String(rowIdx)] || [];
-        const assignedUrls = assignedImageIndices
-          .map((imgIdx: number) => imageUrls[imgIdx])
+        const assignedPaths = assignedImageIndices
+          .map((imgIdx: number) => imagePaths[imgIdx])
           .filter(Boolean);
 
-        await appendRow("expenses", {
+        await addExpense({
           id,
-          date: row.date || "",
+          date: row.date || new Date().toISOString().slice(0, 10),
           category: row.category,
           description: row.description,
-          quantity: row.quantity ?? "",
-          unit: row.unit ?? "",
-          rate: row.rate ?? "",
+          quantity: row.quantity,
+          unit: row.unit,
+          rate: row.rate,
           total: row.total,
-          images: assignedUrls.join(", "),
+          image_urls: assignedPaths.join(", "),
         });
       }
 

@@ -103,7 +103,7 @@ export default function Entries() {
   if (loading) return <LoadingSpinner />;
   if (error) return <div className="card" style={{ color: 'var(--danger)' }}>Error: {error}</div>;
 
-  const activeCategories = categories.filter((c) => c.active === 'TRUE');
+  const activeCategories = categories.filter((c) => c.active === 1);
 
   const renderRow = (e: Expense) => (
     <>

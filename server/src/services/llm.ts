@@ -1,4 +1,7 @@
+import OpenAI from "openai";
 import config from "../config.js";
+
+const openai = new OpenAI({ apiKey: config.OPENAI_API_KEY });
 
 interface ExpenseRow {
   date: string | null;
@@ -10,23 +13,8 @@ interface ExpenseRow {
   total: number;
 }
 
-interface OpenRouterMessage {
-  role: "system" | "user" | "assistant";
-  content: string;
-}
-
-interface OpenRouterChoice {
-  message: {
-    content: string;
-  };
-}
-
-interface OpenRouterResponse {
-  choices: OpenRouterChoice[];
-}
-
 /**
- * Send messy construction expense text to an LLM via OpenRouter and get back
+ * Send messy construction expense text to GPT-4o and get back
  * structured expense rows.
  */
 export async function parseExpenses(
@@ -39,42 +27,22 @@ export async function parseExpenses(
     `Use ONLY these categories: [${categories.join(", ")}]. ` +
     "If date unclear, null. If rate/quantity unclear, just fill total. Return ONLY valid JSON, no markdown.";
 
-  const messages: OpenRouterMessage[] = [
-    { role: "system", content: systemPrompt },
-    { role: "user", content: text },
-  ];
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    temperature: 0.1,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: text },
+    ],
+  });
 
-  const response = await fetch(
-    "https://openrouter.ai/api/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${config.OPENROUTER_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-4o",
-        messages,
-        temperature: 0.1,
-      }),
-    },
-  );
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(
-      `OpenRouter API error (${response.status}): ${errorBody}`,
-    );
-  }
-
-  const data = (await response.json()) as OpenRouterResponse;
-  const content = data.choices?.[0]?.message?.content;
+  const content = response.choices?.[0]?.message?.content;
 
   if (!content) {
-    throw new Error("No content in OpenRouter response");
+    throw new Error("No content in LLM response");
   }
 
-  // Strip potential markdown code fences in case the LLM wraps the response
+  // Strip potential markdown code fences
   const cleaned = content
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```$/i, "")
@@ -82,7 +50,6 @@ export async function parseExpenses(
 
   const parsed: ExpenseRow[] = JSON.parse(cleaned);
 
-  // Validate the shape of each row
   return parsed.map((row) => ({
     date: row.date ?? null,
     category: String(row.category),

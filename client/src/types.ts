@@ -21,5 +21,5 @@ export interface Advance {
 export interface Category {
   id: string;
   label: string;
-  active: string; // "TRUE" | "FALSE"
+  active: number; // 1 | 0 (SQLite integer boolean)
 }

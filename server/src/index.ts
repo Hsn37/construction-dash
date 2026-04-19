@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import config from "./config.js";
 import { authMiddleware } from "./middleware/auth.js";
+import { initDb } from "./services/db.js";
 
 import expensesRouter from "./routes/expenses.js";
 import advancesRouter from "./routes/advances.js";
@@ -36,8 +37,17 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-app.listen(config.PORT, () => {
-  console.log(`Server running on port ${config.PORT}`);
-});
+// Initialize DB then start server
+initDb()
+  .then(() => {
+    console.log("Database tables initialized");
+    app.listen(config.PORT, () => {
+      console.log(`Server running on port ${config.PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Failed to initialize database:", err);
+    process.exit(1);
+  });
 
 export default app;

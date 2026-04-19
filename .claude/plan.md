@@ -3,7 +3,7 @@
 ## 1. Architecture
 
 ```
-[React SPA]  ←──→  [Node.js API Server]  ←──→  [Google Sheets]
+[React SPA]  ←──→  [Node.js API Server]  ←──→  [Turso SQLite]
   (Vite)              (Express)                  [Filen Storage]
   GitHub Pages        Railway/Render             [Whisper API]
                                                  [OpenRouter LLM]
@@ -12,15 +12,16 @@
 ```
 Frontend (React + Vite)          Backend (Node.js + Express)
 ───────────────────────          ──────────────────────────
-GET  /api/expenses          →    sheetsService.getExpenses()
-GET  /api/advances          →    sheetsService.getAdvances()
-GET  /api/categories        →    sheetsService.getCategories()
-POST /api/categories        →    sheetsService.upsertCategory()
-POST /api/advances          →    sheetsService.addAdvance()
+GET  /api/expenses          →    db.getAllExpenses()
+GET  /api/advances          →    db.getAllAdvances()
+GET  /api/categories        →    db.getAllCategories()
+POST /api/categories        →    db.addCategory() / updateCategory() / setCategoryActive()
+POST /api/advances          →    db.addAdvance()
 POST /api/transcribe        →    whisperService.transcribe(audio)
 POST /api/parse             →    llmService.parseNotes(text, categories)
-POST /api/commit            →    filenService.upload(images) + sheetsService.addExpenses(rows)
-POST /api/upload-image      →    filenService.upload(image) → { url }
+POST /api/commit            →    filenService.upload(images) + db.addExpense(rows)
+POST /api/upload-image      →    filenService.upload(image) → { cloudPath }
+GET  /api/files?path=...    →    filenService.readFile(path) → proxy stream
 ```
 
 Two deployments: static SPA on GitHub Pages, Node.js server on a free-tier PaaS.
@@ -29,7 +30,7 @@ Two deployments: static SPA on GitHub Pages, Node.js server on a free-tier PaaS.
 
 - **Frontend:** React SPA (Vite + TypeScript) → GitHub Pages
 - **Backend:** Node.js + Express + TypeScript
-- **Database:** Google Sheets (one spreadsheet, multiple tabs) via `googleapis` SDK
+- **Database:** Turso (hosted SQLite) via `@libsql/client`
 - **File storage:** Filen (`@filen/sdk`) — free 10GB, E2E encrypted, date-wise folders
 - **LLM:** OpenRouter (for structuring messy input into expense rows)
 - **Speech-to-text:** Whisper (OpenAI API via `openai` SDK)

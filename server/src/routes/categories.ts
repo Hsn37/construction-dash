@@ -1,107 +1,70 @@
 import { Router, Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import {
-  getAll,
-  appendRow,
-  updateRow,
-  findRowIndex,
-} from "../services/sheets.js";
+  getAllCategories,
+  addCategory,
+  updateCategory,
+  setCategoryActive,
+} from "../services/db.js";
 
 const router = Router();
 
 router.get("/", async (_req: Request, res: Response) => {
   try {
-    const rows = await getAll("categories");
-    const active = rows.filter((row) => row["active"] === "TRUE");
-    res.json(active);
+    const rows = await getAllCategories();
+    res.json(rows);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown error";
+    const message = error instanceof Error ? error.message : "Unknown error";
     res.status(500).json({ error: message });
   }
 });
 
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const { action, id, label } = req.body as {
-      action: "add" | "update" | "delete";
-      id?: string;
-      label?: string;
-    };
-
-    if (!action) {
-      res.status(400).json({ error: "action is required" });
-      return;
-    }
+    const { action, id, label } = req.body;
 
     switch (action) {
-      case "add": {
+      case "add":
         if (!label) {
-          res.status(400).json({ error: "label is required for add" });
+          res.status(400).json({ error: "label is required" });
           return;
         }
-        const newId = uuidv4();
-        await appendRow("categories", {
-          id: newId,
-          label,
-          active: "TRUE",
-        });
+        await addCategory(uuidv4(), label);
         break;
-      }
 
-      case "update": {
+      case "update":
         if (!id || !label) {
-          res
-            .status(400)
-            .json({ error: "id and label are required for update" });
+          res.status(400).json({ error: "id and label are required" });
           return;
         }
-        const updateIdx = await findRowIndex("categories", "id", id);
-        if (updateIdx === -1) {
-          res.status(404).json({ error: "Category not found" });
-          return;
-        }
-        await updateRow("categories", updateIdx, {
-          id,
-          label,
-          active: "TRUE",
-        });
+        await updateCategory(id, label);
         break;
-      }
 
-      case "delete": {
+      case "delete":
         if (!id) {
-          res.status(400).json({ error: "id is required for delete" });
+          res.status(400).json({ error: "id is required" });
           return;
         }
-        const deleteIdx = await findRowIndex("categories", "id", id);
-        if (deleteIdx === -1) {
-          res.status(404).json({ error: "Category not found" });
-          return;
-        }
-        // Read the existing row to preserve label
-        const allRows = await getAll("categories");
-        const existingRow = allRows[deleteIdx];
-        await updateRow("categories", deleteIdx, {
-          id,
-          label: existingRow["label"] || "",
-          active: "FALSE",
-        });
+        await setCategoryActive(id, false);
         break;
-      }
+
+      case "reactivate":
+        if (!id) {
+          res.status(400).json({ error: "id is required" });
+          return;
+        }
+        await setCategoryActive(id, true);
+        break;
 
       default:
-        res.status(400).json({ error: `Unknown action: ${action}` });
+        res.status(400).json({ error: "Invalid action" });
         return;
     }
 
-    // Re-read and return the updated active categories
-    const updatedRows = await getAll("categories");
-    const active = updatedRows.filter((row) => row["active"] === "TRUE");
-    res.json(active);
+    const updated = await getAllCategories();
+    res.json(updated);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown error";
+    const message = error instanceof Error ? error.message : "Unknown error";
     res.status(500).json({ error: message });
   }
 });

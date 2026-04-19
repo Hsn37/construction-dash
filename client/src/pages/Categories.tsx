@@ -85,8 +85,8 @@ export default function Categories() {
   if (loading) return <LoadingSpinner />;
   if (error) return <div className="card" style={{ color: 'var(--danger)' }}>Error: {error}</div>;
 
-  const active = categories.filter((c) => c.active === 'TRUE');
-  const inactive = categories.filter((c) => c.active !== 'TRUE');
+  const active = categories.filter((c) => c.active === 1);
+  const inactive = categories.filter((c) => c.active !== 1);
 
   return (
     <div>
