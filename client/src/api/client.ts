@@ -34,6 +34,10 @@ export async function getExpenses(): Promise<Expense[]> {
   return request<Expense[]>('/api/expenses');
 }
 
+export async function deleteExpense(id: string): Promise<{ success: boolean }> {
+  return request(`/api/expenses/${id}`, { method: 'DELETE' });
+}
+
 export async function getAdvances(): Promise<Advance[]> {
   return request<Advance[]>('/api/advances');
 }

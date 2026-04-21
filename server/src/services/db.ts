@@ -69,6 +69,10 @@ export async function getAllExpenses() {
   return result.rows;
 }
 
+export async function deleteExpense(id: string) {
+  await db.execute({ sql: "DELETE FROM expenses WHERE id = ?", args: [id] });
+}
+
 export async function addExpense(data: {
   id: string;
   date: string;
