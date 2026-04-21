@@ -4,6 +4,7 @@ import path from "node:path";
 
 interface Config {
   AUTH_SECRET: string;
+  VIEW_TOKEN: string;
   TURSO_URL: string;
   TURSO_TOKEN: string;
   FILEN_EMAIL: string;
@@ -22,6 +23,7 @@ function requireEnv(name: string): string {
 
 const config: Config = {
   AUTH_SECRET: requireEnv("AUTH_SECRET"),
+  VIEW_TOKEN: process.env["VIEW_TOKEN"] || "",
   TURSO_URL: requireEnv("TURSO_SQL_LITE_URL"),
   TURSO_TOKEN: requireEnv("TURSO_SQL_LITE_TOKEN"),
   FILEN_EMAIL: requireEnv("FILEN_EMAIL"),

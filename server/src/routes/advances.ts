@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { getAllAdvances, addAdvance } from "../services/db.js";
+import { adminOnly } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -14,7 +15,7 @@ router.get("/", async (_req: Request, res: Response) => {
   }
 });
 
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", adminOnly, async (req: Request, res: Response) => {
   try {
     const { date, amount, note } = req.body;
 

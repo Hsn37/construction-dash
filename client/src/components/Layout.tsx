@@ -1,16 +1,19 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { CSSProperties, useState } from 'react';
+import { useRole } from '../App';
 
-const navLinks = [
-  { to: '/', label: 'Dashboard' },
-  { to: '/entries', label: 'Entries' },
-  { to: '/saleem', label: 'Saleem Sahab Ledger' },
-  { to: '/add', label: 'Add Entry' },
-  { to: '/categories', label: 'Categories' },
-  { to: '/upload', label: 'Upload' },
+const allNavLinks = [
+  { to: '/', label: 'Dashboard', adminOnly: false },
+  { to: '/entries', label: 'Entries', adminOnly: false },
+  { to: '/saleem', label: 'Saleem Sahab Ledger', adminOnly: false },
+  { to: '/add', label: 'Add Entry', adminOnly: true },
+  { to: '/categories', label: 'Categories', adminOnly: true },
+  { to: '/upload', label: 'Upload', adminOnly: true },
 ];
 
 export default function Layout() {
+  const role = useRole();
+  const navLinks = allNavLinks.filter((l) => !l.adminOnly || role === 'admin');
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (

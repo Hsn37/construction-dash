@@ -6,6 +6,7 @@ import {
   updateCategory,
   setCategoryActive,
 } from "../services/db.js";
+import { adminOnly } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -19,7 +20,7 @@ router.get("/", async (_req: Request, res: Response) => {
   }
 });
 
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", adminOnly, async (req: Request, res: Response) => {
   try {
     const { action, id, label } = req.body;
 

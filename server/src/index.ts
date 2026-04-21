@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import config from "./config.js";
-import { authMiddleware } from "./middleware/auth.js";
+import { authMiddleware, adminOnly } from "./middleware/auth.js";
 import { initDb } from "./services/db.js";
 
 import expensesRouter from "./routes/expenses.js";
@@ -26,15 +26,22 @@ app.use("/api/files", filesRouter);
 // Auth middleware for all other /api routes
 app.use("/api", authMiddleware);
 
-// API routes
+// Role endpoint (available to any authenticated user)
+app.get("/api/auth/role", (req, res) => {
+  res.json({ role: req.userRole });
+});
+
+// Read-only routes (both admin and viewer)
 app.use("/api/expenses", expensesRouter);
 app.use("/api/advances", advancesRouter);
 app.use("/api/categories", categoriesRouter);
-app.use("/api/transcribe", transcribeRouter);
-app.use("/api/parse", parseRouter);
-app.use("/api/commit", commitRouter);
-app.use("/api/upload", uploadRouter);
 app.use("/api/attendance", attendanceRouter);
+
+// Write-only routes (admin only)
+app.use("/api/transcribe", adminOnly, transcribeRouter);
+app.use("/api/parse", adminOnly, parseRouter);
+app.use("/api/commit", adminOnly, commitRouter);
+app.use("/api/upload", adminOnly, uploadRouter);
 
 // Health check (no auth)
 app.get("/", (_req, res) => {

@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
-import { useState, useEffect, CSSProperties } from 'react';
+import { useState, useEffect, createContext, useContext, CSSProperties } from 'react';
 import Layout from './components/Layout';
 import { ToastProvider } from './components/Toast';
 import Dashboard from './pages/Dashboard';
@@ -9,20 +9,26 @@ import AddEntry from './pages/AddEntry';
 import Categories from './pages/Categories';
 import ImageUpload from './pages/ImageUpload';
 
+export type UserRole = 'admin' | 'viewer';
+const RoleContext = createContext<UserRole>('viewer');
+export function useRole() { return useContext(RoleContext); }
+
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
-async function validateToken(token: string): Promise<boolean> {
+async function validateToken(token: string): Promise<UserRole | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/categories`, {
+    const res = await fetch(`${API_BASE}/api/auth/role`, {
       headers: { 'X-Auth-Token': token },
     });
-    return res.ok;
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.role as UserRole;
   } catch {
-    return false;
+    return null;
   }
 }
 
-function AuthModal({ onAuth }: { onAuth: () => void }) {
+function AuthModal({ onAuth }: { onAuth: (role: UserRole) => void }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,11 +41,11 @@ function AuthModal({ onAuth }: { onAuth: () => void }) {
     setError('');
     setLoading(true);
 
-    const valid = await validateToken(trimmed);
+    const role = await validateToken(trimmed);
 
-    if (valid) {
+    if (role) {
       localStorage.setItem('auth_token', trimmed);
-      onAuth();
+      onAuth(role);
     } else {
       setError('Invalid token. Please try again.');
       setLoading(false);
@@ -82,7 +88,7 @@ function AuthModal({ onAuth }: { onAuth: () => void }) {
 }
 
 export default function App() {
-  const [hasAuth, setHasAuth] = useState(false);
+  const [role, setRole] = useState<UserRole | null>(null);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
@@ -91,9 +97,9 @@ export default function App() {
       setChecking(false);
       return;
     }
-    validateToken(token).then((valid) => {
-      if (valid) {
-        setHasAuth(true);
+    validateToken(token).then((r) => {
+      if (r) {
+        setRole(r);
       } else {
         localStorage.removeItem('auth_token');
       }
@@ -103,23 +109,29 @@ export default function App() {
 
   if (checking) return null;
 
-  if (!hasAuth) {
-    return <AuthModal onAuth={() => setHasAuth(true)} />;
+  if (!role) {
+    return <AuthModal onAuth={(r) => setRole(r)} />;
   }
 
   return (
-    <ToastProvider>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/entries" element={<Entries />} />
-          <Route path="/saleem" element={<SaleemLedger />} />
-          <Route path="/add" element={<AddEntry />} />
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/upload" element={<ImageUpload />} />
-        </Route>
-      </Routes>
-    </ToastProvider>
+    <RoleContext.Provider value={role}>
+      <ToastProvider>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/entries" element={<Entries />} />
+            <Route path="/saleem" element={<SaleemLedger />} />
+            {role === 'admin' && (
+              <>
+                <Route path="/add" element={<AddEntry />} />
+                <Route path="/categories" element={<Categories />} />
+                <Route path="/upload" element={<ImageUpload />} />
+              </>
+            )}
+          </Route>
+        </Routes>
+      </ToastProvider>
+    </RoleContext.Provider>
   );
 }
 

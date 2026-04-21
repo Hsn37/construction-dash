@@ -7,6 +7,7 @@ import {
 import type { Advance, Expense } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useToast } from '../components/Toast';
+import { useRole } from '../App';
 
 function formatRs(n: number): string {
   return 'Rs ' + n.toLocaleString('en-PK');
@@ -46,6 +47,8 @@ function getMonthDays(year: number, month: number): { date: string; day: number 
 }
 
 export default function SaleemLedger() {
+  const role = useRole();
+  const isAdmin = role === 'admin';
   const { showToast } = useToast();
   const [advances, setAdvances] = useState<Advance[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -270,12 +273,14 @@ export default function SaleemLedger() {
             ) : (
               <>
                 <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{formatRs(parseFloat(dailyRate))}/day</span>
-                <button className="btn btn-secondary btn-sm" onClick={() => setEditingRate(true)} style={{ padding: '0.15rem 0.4rem', fontSize: '0.6875rem' }}>Edit</button>
+                {isAdmin && <button className="btn btn-secondary btn-sm" onClick={() => setEditingRate(true)} style={{ padding: '0.15rem 0.4rem', fontSize: '0.6875rem' }}>Edit</button>}
               </>
             )}
           </div>
         </div>
 
+        {/* Mode toggle buttons — admin only */}
+        {isAdmin && (<>
         {/* Mode toggle buttons */}
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
           <button
@@ -299,6 +304,7 @@ export default function SaleemLedger() {
               : 'Tap present dates to mark as cleared (or un-clear)'}
           </div>
         )}
+        </>)}
 
         {/* Month nav */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
@@ -355,8 +361,8 @@ export default function SaleemLedger() {
         </div>
       </div>
 
-      {/* Settlement */}
-      {unsettledDates.length > 0 && (
+      {/* Settlement — admin only */}
+      {isAdmin && unsettledDates.length > 0 && (
         <div className="card" style={{ marginBottom: '1.5rem', borderColor: 'var(--warning)', background: 'var(--warning-light)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
             <div>
@@ -381,7 +387,8 @@ export default function SaleemLedger() {
         </div>
       )}
 
-      {/* Add advance form */}
+      {/* Add advance form — admin only */}
+      {isAdmin && (
       <div className="card" style={{ marginBottom: '1.5rem' }}>
         <h2 style={sectionTitle}>Add Advance</h2>
         <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
@@ -414,6 +421,7 @@ export default function SaleemLedger() {
           </button>
         </form>
       </div>
+      )}
 
       {/* Advances table */}
       <div className="card">

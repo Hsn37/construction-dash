@@ -103,6 +103,12 @@ export async function postUploadImage(file: File): Promise<{ url: string }> {
   });
 }
 
+// Auth
+export async function getRole(): Promise<'admin' | 'viewer'> {
+  const res = await request<{ role: 'admin' | 'viewer' }>('/api/auth/role');
+  return res.role;
+}
+
 // Attendance
 export interface AttendanceRecord {
   id: string;

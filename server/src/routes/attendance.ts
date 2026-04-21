@@ -6,6 +6,7 @@ import {
   getSetting,
   setSetting,
 } from "../services/db.js";
+import { adminOnly } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -22,7 +23,7 @@ router.get("/", async (_req: Request, res: Response) => {
   }
 });
 
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", adminOnly, async (req: Request, res: Response) => {
   try {
     const { date, status } = req.body;
 
@@ -44,7 +45,7 @@ router.post("/", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/bulk-clear", async (req: Request, res: Response) => {
+router.post("/bulk-clear", adminOnly, async (req: Request, res: Response) => {
   try {
     const { dates } = req.body;
 
@@ -61,7 +62,7 @@ router.post("/bulk-clear", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/settings", async (req: Request, res: Response) => {
+router.post("/settings", adminOnly, async (req: Request, res: Response) => {
   try {
     const { daily_rate } = req.body;
 
