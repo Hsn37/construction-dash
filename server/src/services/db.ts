@@ -1,4 +1,5 @@
 import { createClient } from "@libsql/client";
+import { v4 as uuidv4 } from "uuid";
 import config from "../config.js";
 
 const db = createClient({
@@ -40,6 +41,21 @@ export async function initDb(): Promise<void> {
         id TEXT PRIMARY KEY,
         label TEXT NOT NULL,
         active INTEGER NOT NULL DEFAULT 1
+      )`,
+      args: [],
+    },
+    {
+      sql: `CREATE TABLE IF NOT EXISTS attendance (
+        id TEXT PRIMARY KEY,
+        date TEXT NOT NULL UNIQUE,
+        status TEXT NOT NULL DEFAULT 'present'
+      )`,
+      args: [],
+    },
+    {
+      sql: `CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
       )`,
       args: [],
     },
@@ -132,6 +148,60 @@ export async function setCategoryActive(id: string, active: boolean) {
   await db.execute({
     sql: "UPDATE categories SET active = ? WHERE id = ?",
     args: [active ? 1 : 0, id],
+  });
+}
+
+// --- Attendance ---
+
+export async function getAttendance() {
+  const result = await db.execute("SELECT * FROM attendance ORDER BY date DESC");
+  return result.rows;
+}
+
+export async function setAttendance(
+  date: string,
+  status: "present" | "cleared" | null,
+) {
+  if (status === null) {
+    await db.execute({
+      sql: "DELETE FROM attendance WHERE date = ?",
+      args: [date],
+    });
+  } else {
+    const id = uuidv4();
+    await db.execute({
+      sql: `INSERT INTO attendance (id, date, status) VALUES (?, ?, ?)
+            ON CONFLICT(date) DO UPDATE SET status = excluded.status`,
+      args: [id, date, status],
+    });
+  }
+}
+
+export async function bulkClearAttendance(dates: string[]) {
+  if (dates.length === 0) return;
+  const statements = dates.map((date) => ({
+    sql: `INSERT INTO attendance (id, date, status) VALUES (?, ?, 'cleared')
+          ON CONFLICT(date) DO UPDATE SET status = 'cleared'`,
+    args: [uuidv4(), date],
+  }));
+  await db.batch(statements);
+}
+
+// --- Settings ---
+
+export async function getSetting(key: string) {
+  const result = await db.execute({
+    sql: "SELECT value FROM settings WHERE key = ?",
+    args: [key],
+  });
+  return result.rows.length > 0 ? (result.rows[0].value as string) : null;
+}
+
+export async function setSetting(key: string, value: string) {
+  await db.execute({
+    sql: `INSERT INTO settings (key, value) VALUES (?, ?)
+          ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    args: [key, value],
   });
 }
 

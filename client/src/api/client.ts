@@ -103,6 +103,42 @@ export async function postUploadImage(file: File): Promise<{ url: string }> {
   });
 }
 
+// Attendance
+export interface AttendanceRecord {
+  id: string;
+  date: string;
+  status: 'present' | 'cleared';
+}
+
+export async function getAttendance(): Promise<{ records: AttendanceRecord[]; daily_rate: string }> {
+  const res = await request<{ attendance: AttendanceRecord[]; daily_rate: string }>('/api/attendance');
+  return { records: res.attendance, daily_rate: res.daily_rate };
+}
+
+export async function postAttendance(date: string, status: 'present' | 'cleared' | null): Promise<{ success: boolean }> {
+  return request('/api/attendance', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ date, status }),
+  });
+}
+
+export async function postBulkClear(dates: string[]): Promise<{ success: boolean }> {
+  return request('/api/attendance/bulk-clear', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dates }),
+  });
+}
+
+export async function postAttendanceSettings(daily_rate: string): Promise<{ success: boolean }> {
+  return request('/api/attendance/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ daily_rate }),
+  });
+}
+
 /**
  * Build a proxied image URL for a Filen cloud path.
  * Use this as <img src={fileUrl(path)} />

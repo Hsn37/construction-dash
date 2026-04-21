@@ -12,6 +12,7 @@ import parseRouter from "./routes/parse.js";
 import commitRouter from "./routes/commit.js";
 import uploadRouter from "./routes/upload.js";
 import filesRouter from "./routes/files.js";
+import attendanceRouter from "./routes/attendance.js";
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use("/api/transcribe", transcribeRouter);
 app.use("/api/parse", parseRouter);
 app.use("/api/commit", commitRouter);
 app.use("/api/upload", uploadRouter);
+app.use("/api/attendance", attendanceRouter);
 
 // Health check (no auth)
 app.get("/", (_req, res) => {
