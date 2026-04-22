@@ -226,10 +226,11 @@ export default function Entries() {
         <td>{e.unit || '-'}</td>
         <td style={{ textAlign: 'right' }}>{e.rate != null ? formatRs(e.rate) : '-'}</td>
         <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatRs(e.total)}</td>
+        <td style={{ fontSize: '0.75rem' }}>{e.paid_by || 'سلیم صاحب'}</td>
       </tr>
       {expandedId === e.id && (
         <tr key={e.id + '-images'}>
-          <td colSpan={deleteMode ? 8 : 7} style={{ background: '#f8fafc', padding: '1rem' }}>
+          <td colSpan={deleteMode ? 9 : 8} style={{ background: '#f8fafc', padding: '1rem' }}>
             {parseImages(e.image_urls).length > 0 ? (
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {parseImages(e.image_urls).map((url, i) => (
@@ -266,7 +267,12 @@ export default function Entries() {
       </div>
       <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.25rem' }}>{e.description}</div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span className="badge">{e.category}</span>
+        <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
+          <span className="badge">{e.category}</span>
+          <span style={{ fontSize: '0.625rem', color: (e.paid_by || 'سلیم صاحب') === 'سلیم صاحب' ? 'var(--success)' : 'var(--primary)', fontWeight: 600 }}>
+            {e.paid_by || 'سلیم صاحب'}
+          </span>
+        </div>
         {(e.quantity != null && e.quantity > 0) && (
           <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
             {e.quantity} {e.unit || ''} {e.rate != null ? `@ ${formatRs(e.rate)}` : ''}
@@ -371,6 +377,7 @@ export default function Entries() {
               <th style={{ ...thClickable, textAlign: 'right' }} onClick={() => handleSort('total')}>
                 Total{sortIcon('total')}
               </th>
+              <th>Paid By</th>
             </tr>
           </thead>
           <tbody>
@@ -379,7 +386,7 @@ export default function Entries() {
                   <>
                     <tr key={'group-' + date}>
                       <td
-                        colSpan={deleteMode ? 8 : 7}
+                        colSpan={deleteMode ? 9 : 8}
                         style={{
                           background: 'var(--primary-light)',
                           fontWeight: 700,
@@ -397,7 +404,7 @@ export default function Entries() {
               : sorted.map(renderRow)}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={deleteMode ? 8 : 7} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>
+                <td colSpan={deleteMode ? 9 : 8} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>
                   No entries found.
                 </td>
               </tr>

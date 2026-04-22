@@ -14,6 +14,7 @@ interface ParsedRow {
   unit: string;
   rate: string;
   total: string;
+  paid_by: string;
   assignedImages: number[]; // indices into uploadedFiles
 }
 
@@ -189,6 +190,7 @@ export default function AddEntry() {
         unit: r.unit || '',
         rate: r.rate != null ? String(r.rate) : '',
         total: r.total != null ? String(r.total) : '',
+        paid_by: 'سلیم صاحب',
         assignedImages: [],
       }));
       setRows(parsed);
@@ -245,6 +247,7 @@ export default function AddEntry() {
         unit: '',
         rate: '',
         total: '',
+        paid_by: 'سلیم صاحب',
         assignedImages: [],
       },
     ]);
@@ -301,6 +304,7 @@ export default function AddEntry() {
         unit: r.unit || null,
         rate: r.rate ? parseFloat(r.rate) : null,
         total: r.total ? parseFloat(r.total) : 0,
+        paid_by: r.paid_by || 'سلیم صاحب',
         image_urls: r.assignedImages
           .map((i) => imageUrlMap.get(i))
           .filter(Boolean)
@@ -459,17 +463,18 @@ export default function AddEntry() {
           <div className="preview-layout">
             {/* Table area */}
             <div style={{ flex: 1, overflowX: 'auto' }}>
-              <table style={{ fontSize: '0.875rem', tableLayout: 'fixed', minWidth: 900 }}>
+              <table style={{ fontSize: '0.875rem', tableLayout: 'fixed', minWidth: 1000 }}>
                 <thead>
                   <tr>
                     <th style={{ width: 130 }}>Date</th>
-                    <th style={{ width: 160 }}>Category</th>
-                    <th style={{ width: 240 }}>Description</th>
-                    <th style={{ width: 80 }}>Qty</th>
-                    <th style={{ width: 80 }}>Unit</th>
+                    <th style={{ width: 150 }}>Category</th>
+                    <th style={{ width: 200 }}>Description</th>
+                    <th style={{ width: 70 }}>Qty</th>
+                    <th style={{ width: 70 }}>Unit</th>
                     <th style={{ width: 80 }}>Rate</th>
-                    <th style={{ width: 100 }}>Total</th>
-                    <th style={{ width: 100 }}>Imgs</th>
+                    <th style={{ width: 90 }}>Total</th>
+                    <th style={{ width: 100 }}>Paid By</th>
+                    <th style={{ width: 80 }}>Imgs</th>
                     <th style={{ width: 40 }}></th>
                   </tr>
                 </thead>
@@ -559,6 +564,17 @@ export default function AddEntry() {
                           style={{ ...cellInputStyle, width: '100%' }}
                           onClick={(e) => e.stopPropagation()}
                         />
+                      </td>
+                      <td style={cellPad}>
+                        <select
+                          value={row.paid_by}
+                          onChange={(e) => updateRow(row.id, 'paid_by', e.target.value)}
+                          style={cellInputStyle}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <option value="سلیم صاحب">سلیم صاحب</option>
+                          <option value="نعیم صاحب">نعیم صاحب</option>
+                        </select>
                       </td>
                       <td style={{ ...cellPad }}>
                         {row.assignedImages.length > 0 ? (

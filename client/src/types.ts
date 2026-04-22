@@ -8,6 +8,7 @@ export interface Expense {
   rate: number | null;
   total: number;
   image_urls: string;
+  paid_by: string; // 'saleem' | 'direct'
   created_at: string;
 }
 

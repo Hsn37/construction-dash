@@ -87,7 +87,8 @@ export default function Dashboard() {
 
   const totalSpent = useMemo(() => filtered.reduce((s, e) => s + e.total, 0), [filtered]);
   const totalAdvances = useMemo(() => advances.reduce((s, a) => s + a.amount, 0), [advances]);
-  const balance = totalAdvances - totalSpent;
+  const saleemSpent = useMemo(() => filtered.filter((e) => !e.paid_by || e.paid_by === 'سلیم صاحب' || e.paid_by === 'saleem').reduce((s, e) => s + e.total, 0), [filtered]);
+  const balance = totalAdvances - saleemSpent;
 
   const thisMonth = useMemo(() => {
     const now = new Date();

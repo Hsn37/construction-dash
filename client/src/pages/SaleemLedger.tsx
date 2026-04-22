@@ -93,7 +93,8 @@ export default function SaleemLedger() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const totalGiven = useMemo(() => advances.reduce((s, a) => s + a.amount, 0), [advances]);
-  const totalSpent = useMemo(() => expenses.reduce((s, e) => s + e.total, 0), [expenses]);
+  const saleemExpenses = useMemo(() => expenses.filter((e) => !e.paid_by || e.paid_by === 'سلیم صاحب' || e.paid_by === 'saleem'), [expenses]);
+  const totalSpent = useMemo(() => saleemExpenses.reduce((s, e) => s + e.total, 0), [saleemExpenses]);
   const balance = totalGiven - totalSpent;
 
   // Attendance map: date -> status
@@ -167,6 +168,7 @@ export default function SaleemLedger() {
         unit: 'days',
         rate,
         total,
+        paid_by: 'سلیم صاحب',
         image_urls: '',
       }]);
 
