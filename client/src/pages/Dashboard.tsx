@@ -59,7 +59,7 @@ function getWeekKey(dateStr: string): string {
   const diff = d.getDate() - day;
   const weekStart = new Date(d);
   weekStart.setDate(diff);
-  return weekStart.toISOString().slice(0, 10);
+  return `${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(2, '0')}-${String(weekStart.getDate()).padStart(2, '0')}`;
 }
 
 export default function Dashboard() {

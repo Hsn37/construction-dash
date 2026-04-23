@@ -30,7 +30,8 @@ function formatDate(dateStr: string): string {
 }
 
 function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -39,8 +40,10 @@ function getMonthDays(year: number, month: number): { date: string; day: number 
   const days: { date: string; day: number }[] = [];
   const d = new Date(year, month, 1);
   while (d.getMonth() === month) {
-    const iso = d.toISOString().slice(0, 10);
-    days.push({ date: iso, day: d.getDay() });
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    days.push({ date: `${yyyy}-${mm}-${dd}`, day: d.getDay() });
     d.setDate(d.getDate() + 1);
   }
   return days;

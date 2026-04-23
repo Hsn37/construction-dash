@@ -26,6 +26,11 @@ function formatDate(dateStr: string): string {
   return `${parts[2]}-${parts[1]}-${parts[0]}`;
 }
 
+function paidByLabel(val: string | undefined | null): string {
+  if (!val || val === 'saleem') return 'سلیم صاحب';
+  return val;
+}
+
 type SortField = 'date' | 'category' | 'description' | 'quantity' | 'rate' | 'total';
 type SortDir = 'asc' | 'desc';
 
@@ -226,7 +231,7 @@ export default function Entries() {
         <td>{e.unit || '-'}</td>
         <td style={{ textAlign: 'right' }}>{e.rate != null ? formatRs(e.rate) : '-'}</td>
         <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatRs(e.total)}</td>
-        <td style={{ fontSize: '0.75rem' }}>{e.paid_by || 'سلیم صاحب'}</td>
+        <td style={{ fontSize: '0.75rem' }}>{paidByLabel(e.paid_by)}</td>
       </tr>
       {expandedId === e.id && (
         <tr key={e.id + '-images'}>
@@ -267,17 +272,15 @@ export default function Entries() {
       </div>
       <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.25rem' }}>{e.description}</div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
-          <span className="badge">{e.category}</span>
-          <span style={{ fontSize: '0.625rem', color: (e.paid_by || 'سلیم صاحب') === 'سلیم صاحب' ? 'var(--success)' : 'var(--primary)', fontWeight: 600 }}>
-            {e.paid_by || 'سلیم صاحب'}
-          </span>
-        </div>
+        <span className="badge">{e.category}</span>
         {(e.quantity != null && e.quantity > 0) && (
           <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
             {e.quantity} {e.unit || ''} {e.rate != null ? `@ ${formatRs(e.rate)}` : ''}
           </span>
         )}
+      </div>
+      <div style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', marginTop: '0.375rem' }}>
+        Paid by: <span style={{ fontWeight: 600, color: paidByLabel(e.paid_by) === 'سلیم صاحب' ? 'var(--success)' : 'var(--primary)' }}>{paidByLabel(e.paid_by)}</span>
       </div>
       {expandedId === e.id && parseImages(e.image_urls).length > 0 && (
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border)' }}>

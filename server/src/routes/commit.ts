@@ -13,6 +13,7 @@ interface ExpenseRow {
   rate: number | null;
   total: number;
   image_urls: string;
+  paid_by: string;
 }
 
 router.post("/", async (req: Request, res: Response) => {
@@ -53,6 +54,7 @@ router.post("/", async (req: Request, res: Response) => {
         rate: row.rate,
         total: row.total,
         image_urls: row.image_urls || "",
+        paid_by: row.paid_by || "سلیم صاحب",
       });
     }
 

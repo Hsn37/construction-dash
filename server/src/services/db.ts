@@ -23,6 +23,7 @@ export async function initDb(): Promise<void> {
         rate REAL,
         total REAL NOT NULL,
         image_urls TEXT NOT NULL DEFAULT '',
+        paid_by TEXT DEFAULT 'سلیم صاحب',
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       )`,
       args: [],
@@ -60,6 +61,16 @@ export async function initDb(): Promise<void> {
       args: [],
     },
   ]);
+
+  // Migrate: add paid_by column if the table already existed without it
+  try {
+    await db.execute({
+      sql: `ALTER TABLE expenses ADD COLUMN paid_by TEXT DEFAULT 'سلیم صاحب'`,
+      args: [],
+    });
+  } catch (_) {
+    // Column already exists — ignore
+  }
 }
 
 // --- Expenses ---
@@ -83,10 +94,11 @@ export async function addExpense(data: {
   rate: number | null;
   total: number;
   image_urls: string;
+  paid_by: string;
 }) {
   await db.execute({
-    sql: `INSERT INTO expenses (id, date, category, description, quantity, unit, rate, total, image_urls)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO expenses (id, date, category, description, quantity, unit, rate, total, image_urls, paid_by)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       data.id,
       data.date,
@@ -97,6 +109,7 @@ export async function addExpense(data: {
       data.rate,
       data.total,
       data.image_urls,
+      data.paid_by,
     ],
   });
 }
