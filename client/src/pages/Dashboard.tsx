@@ -168,16 +168,10 @@ export default function Dashboard() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-4 summary-cards">
+      <div className="grid grid-3 summary-cards">
         <div className="card">
           <div className="card-header">Total Spent</div>
           <div className="card-value">{formatRs(totalSpent)}</div>
-        </div>
-        <div className="card">
-          <div className="card-header">Saleem Sahab Balance</div>
-          <div className="card-value" style={{ color: balance >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-            {formatRs(balance)}
-          </div>
         </div>
         <div className="card">
           <div className="card-header">This Month</div>
@@ -186,6 +180,28 @@ export default function Dashboard() {
         <div className="card">
           <div className="card-header">Total Entries</div>
           <div className="card-value">{filtered.length}</div>
+        </div>
+      </div>
+
+      {/* Saleem vs Naeem breakdown */}
+      <div className="grid grid-4 summary-cards">
+        <div className="card">
+          <div className="card-header">Given to Saleem</div>
+          <div className="card-value">{formatRs(totalAdvances)}</div>
+        </div>
+        <div className="card">
+          <div className="card-header">Spent by Saleem</div>
+          <div className="card-value">{formatRs(saleemSpent)}</div>
+        </div>
+        <div className="card">
+          <div className="card-header">Saleem Balance</div>
+          <div className="card-value" style={{ color: balance >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+            {formatRs(balance)}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-header">Spent by Naeem</div>
+          <div className="card-value">{formatRs(totalSpent - saleemSpent)}</div>
         </div>
       </div>
 
@@ -289,6 +305,11 @@ export default function Dashboard() {
                             {e.quantity} {e.unit || ''}{e.rate != null ? ` @ ${formatRs(e.rate)}` : ''}
                           </div>
                         )}
+                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', marginTop: '0.125rem' }}>
+                          Paid by: <span style={{ fontWeight: 600, color: (!e.paid_by || e.paid_by === 'سلیم صاحب' || e.paid_by === 'saleem') ? 'var(--success)' : 'var(--primary)' }}>
+                            {(!e.paid_by || e.paid_by === 'saleem') ? 'سلیم صاحب' : e.paid_by}
+                          </span>
+                        </div>
                       </div>
                       <div style={{ fontWeight: 700, fontSize: '1rem', whiteSpace: 'nowrap', marginLeft: '0.75rem' }}>
                         {formatRs(e.total)}

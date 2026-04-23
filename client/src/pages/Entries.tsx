@@ -48,6 +48,7 @@ export default function Entries() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [catFilter, setCatFilter] = useState('');
+  const [paidByFilter, setPaidByFilter] = useState('');
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
@@ -131,6 +132,7 @@ export default function Entries() {
       if (dateFrom && d < dateFrom) return false;
       if (dateTo && d > dateTo) return false;
       if (catFilter && e.category !== catFilter) return false;
+      if (paidByFilter && paidByLabel(e.paid_by) !== paidByFilter) return false;
       if (search) {
         const s = search.toLowerCase();
         if (
@@ -141,7 +143,7 @@ export default function Entries() {
       }
       return true;
     });
-  }, [expenses, dateFrom, dateTo, catFilter, search]);
+  }, [expenses, dateFrom, dateTo, catFilter, paidByFilter, search]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -342,6 +344,14 @@ export default function Entries() {
             {activeCategories.map((c) => (
               <option key={c.id} value={c.label}>{c.label}</option>
             ))}
+          </select>
+        </div>
+        <div>
+          <label>Paid By</label>
+          <select value={paidByFilter} onChange={(e) => setPaidByFilter(e.target.value)}>
+            <option value="">All</option>
+            <option value="سلیم صاحب">سلیم صاحب</option>
+            <option value="نعیم صاحب">نعیم صاحب</option>
           </select>
         </div>
         <div>

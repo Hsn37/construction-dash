@@ -97,8 +97,9 @@ export default function SaleemLedger() {
 
   const totalGiven = useMemo(() => advances.reduce((s, a) => s + a.amount, 0), [advances]);
   const saleemExpenses = useMemo(() => expenses.filter((e) => !e.paid_by || e.paid_by === 'سلیم صاحب' || e.paid_by === 'saleem'), [expenses]);
-  const totalSpent = useMemo(() => saleemExpenses.reduce((s, e) => s + e.total, 0), [saleemExpenses]);
-  const balance = totalGiven - totalSpent;
+  const saleemSpent = useMemo(() => saleemExpenses.reduce((s, e) => s + e.total, 0), [saleemExpenses]);
+  const saleemBalance = totalGiven - saleemSpent;
+  const totalProjectSpent = useMemo(() => expenses.reduce((s, e) => s + e.total, 0), [expenses]);
 
   // Attendance map: date -> status
   const attMap = useMemo(() => {
@@ -241,20 +242,24 @@ export default function SaleemLedger() {
       <h1 className="page-title">Saleem Sahab Ledger</h1>
 
       {/* Summary */}
-      <div className="grid grid-3" style={{ marginBottom: '1.5rem' }}>
+      <div className="grid grid-4 summary-cards">
         <div className="card">
-          <div className="card-header">Total Given</div>
+          <div className="card-header">Given to Saleem</div>
           <div className="card-value">{formatRs(totalGiven)}</div>
         </div>
         <div className="card">
-          <div className="card-header">Total Spent</div>
-          <div className="card-value">{formatRs(totalSpent)}</div>
+          <div className="card-header">Spent by Saleem</div>
+          <div className="card-value">{formatRs(saleemSpent)}</div>
         </div>
         <div className="card">
-          <div className="card-header">Net Balance</div>
-          <div className="card-value" style={{ color: balance >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-            {formatRs(balance)}
+          <div className="card-header">Saleem Balance</div>
+          <div className="card-value" style={{ color: saleemBalance >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+            {formatRs(saleemBalance)}
           </div>
+        </div>
+        <div className="card">
+          <div className="card-header">Total Project Spend</div>
+          <div className="card-value">{formatRs(totalProjectSpent)}</div>
         </div>
       </div>
 
