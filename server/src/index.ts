@@ -13,6 +13,7 @@ import commitRouter from "./routes/commit.js";
 import uploadRouter from "./routes/upload.js";
 import filesRouter from "./routes/files.js";
 import attendanceRouter from "./routes/attendance.js";
+import notesRouter from "./routes/notes.js";
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use("/api/expenses", expensesRouter);
 app.use("/api/advances", advancesRouter);
 app.use("/api/categories", categoriesRouter);
 app.use("/api/attendance", attendanceRouter);
+app.use("/api/notes", notesRouter);
 
 // Write-only routes (admin only)
 app.use("/api/transcribe", adminOnly, transcribeRouter);

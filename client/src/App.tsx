@@ -8,6 +8,7 @@ import SaleemLedger from './pages/SaleemLedger';
 import AddEntry from './pages/AddEntry';
 import Categories from './pages/Categories';
 import ImageUpload from './pages/ImageUpload';
+import Notes from './pages/Notes';
 
 export type UserRole = 'admin' | 'viewer';
 const RoleContext = createContext<UserRole>('viewer');
@@ -121,6 +122,7 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/entries" element={<Entries />} />
             <Route path="/saleem" element={<SaleemLedger />} />
+            <Route path="/notes" element={<Notes />} />
             {role === 'admin' && (
               <>
                 <Route path="/add" element={<AddEntry />} />

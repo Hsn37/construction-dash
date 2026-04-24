@@ -79,21 +79,32 @@ export default function Dashboard() {
 
   const filtered = useMemo(() => {
     return expenses.filter((e) => {
-      if (dateFrom && e.date < dateFrom) return false;
-      if (dateTo && e.date > dateTo) return false;
+      const d = toISO(e.date);
+      if (dateFrom && d < dateFrom) return false;
+      if (dateTo && d > dateTo) return false;
       return true;
     });
   }, [expenses, dateFrom, dateTo]);
 
+  const filteredAdvances = useMemo(() => {
+    if (!dateFrom && !dateTo) return advances;
+    return advances.filter((a) => {
+      const d = toISO(a.date);
+      if (dateFrom && d < dateFrom) return false;
+      if (dateTo && d > dateTo) return false;
+      return true;
+    });
+  }, [advances, dateFrom, dateTo]);
+
   const totalSpent = useMemo(() => filtered.reduce((s, e) => s + e.total, 0), [filtered]);
-  const totalAdvances = useMemo(() => advances.reduce((s, a) => s + a.amount, 0), [advances]);
+  const totalAdvances = useMemo(() => filteredAdvances.reduce((s, a) => s + a.amount, 0), [filteredAdvances]);
   const saleemSpent = useMemo(() => filtered.filter((e) => !e.paid_by || e.paid_by === 'سلیم صاحب' || e.paid_by === 'saleem').reduce((s, e) => s + e.total, 0), [filtered]);
   const balance = totalAdvances - saleemSpent;
 
   const thisMonth = useMemo(() => {
     const now = new Date();
     const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    return filtered.filter((e) => e.date.startsWith(ym)).reduce((s, e) => s + e.total, 0);
+    return filtered.filter((e) => toISO(e.date).startsWith(ym)).reduce((s, e) => s + e.total, 0);
   }, [filtered]);
 
   const categoryData = useMemo(() => {

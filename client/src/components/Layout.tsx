@@ -6,6 +6,7 @@ const allNavLinks = [
   { to: '/', label: 'Dashboard', adminOnly: false },
   { to: '/entries', label: 'Entries', adminOnly: false },
   { to: '/saleem', label: 'Saleem Sahab Ledger', adminOnly: false },
+  { to: '/notes', label: 'Notes', adminOnly: false },
   { to: '/add', label: 'Add Entry', adminOnly: true },
   { to: '/categories', label: 'Categories', adminOnly: true },
   { to: '/upload', label: 'Upload', adminOnly: true },

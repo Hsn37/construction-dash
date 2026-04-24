@@ -149,6 +149,29 @@ export async function postAttendanceSettings(daily_rate: string): Promise<{ succ
   });
 }
 
+// Notes
+export interface Note {
+  id: string;
+  content: string;
+  created_at: string;
+}
+
+export async function getNotes(): Promise<Note[]> {
+  return request('/api/notes');
+}
+
+export async function postNote(content: string): Promise<{ success: boolean; id: string }> {
+  return request('/api/notes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content }),
+  });
+}
+
+export async function deleteNote(id: string): Promise<{ success: boolean }> {
+  return request(`/api/notes/${id}`, { method: 'DELETE' });
+}
+
 /**
  * Build a proxied image URL for a Filen cloud path.
  * Use this as <img src={fileUrl(path)} />

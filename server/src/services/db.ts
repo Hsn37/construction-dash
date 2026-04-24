@@ -60,6 +60,14 @@ export async function initDb(): Promise<void> {
       )`,
       args: [],
     },
+    {
+      sql: `CREATE TABLE IF NOT EXISTS notes (
+        id TEXT PRIMARY KEY,
+        content TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )`,
+      args: [],
+    },
   ]);
 
   // Migrate: add paid_by column if the table already existed without it
@@ -202,6 +210,24 @@ export async function bulkClearAttendance(dates: string[]) {
     args: [uuidv4(), date],
   }));
   await db.batch(statements);
+}
+
+// --- Notes ---
+
+export async function getAllNotes() {
+  const result = await db.execute("SELECT * FROM notes ORDER BY created_at DESC");
+  return result.rows;
+}
+
+export async function addNote(id: string, content: string) {
+  await db.execute({
+    sql: "INSERT INTO notes (id, content) VALUES (?, ?)",
+    args: [id, content],
+  });
+}
+
+export async function deleteNote(id: string) {
+  await db.execute({ sql: "DELETE FROM notes WHERE id = ?", args: [id] });
 }
 
 // --- Settings ---
