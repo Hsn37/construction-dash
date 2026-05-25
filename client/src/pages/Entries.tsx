@@ -54,6 +54,7 @@ export default function Entries() {
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [groupByDate, setGroupByDate] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Delete mode: 5-tap activation
   const [deleteMode, setDeleteMode] = useState(false);
@@ -178,6 +179,20 @@ export default function Entries() {
     );
   }, [sorted, groupByDate, sortDir]);
 
+  const selectedExpenses = useMemo(() => sorted.filter((e) => selectedIds.has(e.id)), [sorted, selectedIds]);
+
+  const selectionSubtotals = useMemo(() => {
+    if (selectedExpenses.length < 2) return null;
+    const total = selectedExpenses.reduce((s, e) => s + e.total, 0);
+    const byDay = new Map<string, number>();
+    for (const e of selectedExpenses) {
+      const key = toISO(e.date);
+      byDay.set(key, (byDay.get(key) || 0) + e.total);
+    }
+    const days = Array.from(byDay.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+    return { total, days, count: selectedExpenses.length };
+  }, [selectedExpenses]);
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -207,13 +222,36 @@ export default function Entries() {
 
   const activeCategories = categories.filter((c) => c.active === 1);
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const visibleIds = sorted.map((e) => e.id);
+    const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(visibleIds));
+    }
+  };
+
+  const allVisibleSelected = sorted.length > 0 && sorted.every((e) => selectedIds.has(e.id));
+
   const renderRow = (e: Expense) => (
     <>
       <tr
         key={e.id}
         onClick={() => setExpandedId(expandedId === e.id ? null : e.id)}
-        style={{ cursor: 'pointer' }}
+        style={{ cursor: 'pointer', background: selectedIds.has(e.id) ? '#dbeafe' : undefined }}
       >
+        <td style={{ textAlign: 'center', padding: '0.5rem' }} onClick={(ev) => ev.stopPropagation()}>
+          <input type="checkbox" checked={selectedIds.has(e.id)} onChange={() => toggleSelect(e.id)} style={checkboxStyle} />
+        </td>
         {deleteMode && (
           <td style={{ textAlign: 'center' }} onClick={(ev) => ev.stopPropagation()}>
             {confirmId === e.id ? (
@@ -226,7 +264,7 @@ export default function Entries() {
             )}
           </td>
         )}
-        <td>{formatDate(e.date)}</td>
+        <td style={{ whiteSpace: 'nowrap' }}>{formatDate(e.date)}</td>
         <td>{e.category}</td>
         <td>{e.description}</td>
         <td style={{ textAlign: 'right' }}>{e.quantity ?? '-'}</td>
@@ -237,7 +275,7 @@ export default function Entries() {
       </tr>
       {expandedId === e.id && (
         <tr key={e.id + '-images'}>
-          <td colSpan={deleteMode ? 9 : 8} style={{ background: '#f8fafc', padding: '1rem' }}>
+          <td colSpan={deleteMode ? 10 : 9} style={{ background: '#f8fafc', padding: '1rem' }}>
             {parseImages(e.image_urls).length > 0 ? (
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {parseImages(e.image_urls).map((url, i) => (
@@ -265,11 +303,14 @@ export default function Entries() {
     <div
       key={e.id}
       className="card"
-      style={{ marginBottom: '0.5rem', padding: '0.75rem 1rem', cursor: 'pointer' }}
+      style={{ marginBottom: '0.5rem', padding: '0.75rem 1rem', cursor: 'pointer', background: selectedIds.has(e.id) ? '#dbeafe' : undefined }}
       onClick={() => setExpandedId(expandedId === e.id ? null : e.id)}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{formatDate(e.date)}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <input type="checkbox" checked={selectedIds.has(e.id)} onChange={() => toggleSelect(e.id)} onClick={(ev) => ev.stopPropagation()} style={checkboxStyle} />
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{formatDate(e.date)}</span>
+        </div>
         <span style={{ fontWeight: 700, fontSize: '1rem' }}>{formatRs(e.total)}</span>
       </div>
       <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.25rem' }}>{e.description}</div>
@@ -370,6 +411,9 @@ export default function Entries() {
         <table>
           <thead>
             <tr>
+              <th style={{ width: 36, textAlign: 'center', padding: '0.5rem' }}>
+                <input type="checkbox" checked={allVisibleSelected} onChange={toggleSelectAll} style={checkboxStyle} />
+              </th>
               {deleteMode && <th style={{ width: 60 }}></th>}
               <th style={thClickable} onClick={() => handleSort('date')}>
                 Date{sortIcon('date')}
@@ -395,11 +439,12 @@ export default function Entries() {
           </thead>
           <tbody>
             {grouped
-              ? grouped.map(([date, items]) => (
-                  <>
+              ? grouped.map(([date, items]) => {
+                  const dayTotal = items.reduce((s, e) => s + e.total, 0);
+                  return <>
                     <tr key={'group-' + date}>
                       <td
-                        colSpan={deleteMode ? 9 : 8}
+                        colSpan={deleteMode ? 10 : 9}
                         style={{
                           background: 'var(--primary-light)',
                           fontWeight: 700,
@@ -408,16 +453,19 @@ export default function Entries() {
                           padding: '0.5rem 1rem',
                         }}
                       >
-                        {formatDate(date)} ({items.length} {items.length === 1 ? 'entry' : 'entries'})
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>{formatDate(date)} ({items.length} {items.length === 1 ? 'entry' : 'entries'})</span>
+                          <span style={{ fontSize: '0.75rem' }}>{formatRs(dayTotal)}</span>
+                        </div>
                       </td>
                     </tr>
                     {items.map(renderRow)}
-                  </>
-                ))
+                  </>;
+                })
               : sorted.map(renderRow)}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={deleteMode ? 9 : 8} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>
+                <td colSpan={deleteMode ? 10 : 9} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>
                   No entries found.
                 </td>
               </tr>
@@ -440,14 +488,16 @@ export default function Entries() {
           ))}
         </div>
         {grouped
-          ? grouped.map(([date, items]) => (
-              <div key={'mgroup-' + date}>
-                <div style={{ background: 'var(--primary-light)', color: 'var(--primary)', fontWeight: 700, fontSize: '0.8125rem', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)', marginBottom: '0.5rem' }}>
-                  {formatDate(date)} ({items.length} {items.length === 1 ? 'entry' : 'entries'})
+          ? grouped.map(([date, items]) => {
+              const dayTotal = items.reduce((s, e) => s + e.total, 0);
+              return <div key={'mgroup-' + date}>
+                <div style={{ background: 'var(--primary-light)', color: 'var(--primary)', fontWeight: 700, fontSize: '0.8125rem', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>{formatDate(date)} ({items.length} {items.length === 1 ? 'entry' : 'entries'})</span>
+                  <span style={{ fontSize: '0.75rem' }}>{formatRs(dayTotal)}</span>
                 </div>
                 {items.map(renderCard)}
-              </div>
-            ))
+              </div>;
+            })
           : sorted.map(renderCard)}
         {sorted.length === 0 && (
           <div className="card" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>
@@ -456,12 +506,26 @@ export default function Entries() {
         )}
       </div>
 
-      <div style={{ marginTop: '0.75rem', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+      <div style={{ marginTop: '0.75rem', fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: selectionSubtotals ? '4rem' : 0 }}>
         Showing {sorted.length} of {expenses.length} entries
         {sorted.length > 0 && (
           <> &mdash; Total: <strong>{formatRs(sorted.reduce((s, e) => s + e.total, 0))}</strong></>
         )}
       </div>
+
+      {selectionSubtotals && (
+        <div style={subtotalBarStyle}>
+          <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
+            {selectionSubtotals.count} rows &mdash; {formatRs(selectionSubtotals.total)}
+          </span>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.125rem', padding: '0.25rem', lineHeight: 1, opacity: 0.8 }}
+          >
+            &times;
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -490,4 +554,28 @@ const thumbStyle: CSSProperties = {
   objectFit: 'cover',
   borderRadius: 'var(--radius-sm)',
   border: '1px solid var(--border)',
+};
+
+const subtotalBarStyle: CSSProperties = {
+  position: 'fixed',
+  bottom: 0,
+  left: 0,
+  right: 0,
+  background: 'var(--primary)',
+  color: '#fff',
+  padding: '0.625rem 1rem',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '0.75rem',
+  fontSize: '0.8125rem',
+  boxShadow: '0 -2px 8px rgba(0,0,0,0.15)',
+  zIndex: 100,
+};
+
+const checkboxStyle: CSSProperties = {
+  width: 15,
+  height: 15,
+  cursor: 'pointer',
+  accentColor: 'var(--primary)',
 };
