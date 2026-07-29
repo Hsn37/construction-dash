@@ -1,0 +1,36 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy frontend + backend
+    runs-on: ubuntu-latest
+    environment: AxonServerProd
+    timeout-minutes: 15
+
+    env:
+      APP_DIR: /root/construction-dash
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          command_timeout: 12m
+          envs: APP_DIR
+          script: |
+            set -euo pipefail
+            cd "$APP_DIR"
+            git pull
+            bash scripts/deploy-remote.sh
